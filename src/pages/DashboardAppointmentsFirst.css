@@ -1,0 +1,1 @@
+.dashboard-sidebar .dashboard-nav {display: flex;flex-direction: column;} .dashboard-sidebar .dashboard-nav__item:first-child {order: -10;}

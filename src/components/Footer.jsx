@@ -1,18 +1,14 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 
 function Footer() {
   return (
     <footer className="site-footer">
-      <div className="site-footer__links">
-        <Link to="/terms">Terms of use</Link>
-        <Link to="/privacy">Privacy policy</Link>
-      </div>
       <p>
-        © {new Date().getFullYear()} Optimise. Crafted by{' '}
+        {new Date().getFullYear()} © Optimise. Product by{' '}
         <a href="https://growthsparrow.com" target="_blank" rel="noreferrer">
           Growth Sparrow
         </a>
+        {' · '}Version 1.01
       </p>
     </footer>
   );

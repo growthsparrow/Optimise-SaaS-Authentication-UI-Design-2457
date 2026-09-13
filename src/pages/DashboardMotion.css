@@ -1,0 +1,451 @@
+.dashboard-page {
+  isolation: isolate;
+}
+
+.dashboard-page::before,
+.dashboard-page::after {
+  position: fixed;
+  z-index: -1;
+  display: block;
+  width: 260px;
+  height: 260px;
+  border: 1px solid rgba(14, 170, 179, 0.12);
+  border-radius: 50%;
+  pointer-events: none;
+  content: '';
+}
+
+.dashboard-page::before {
+  top: 9%;
+  right: -135px;
+  box-shadow:
+    0 0 0 28px rgba(14, 170, 179, 0.035),
+    0 0 0 62px rgba(14, 170, 179, 0.02);
+  animation: dashboard-orbit 18s ease-in-out infinite;
+}
+
+.dashboard-page::after {
+  bottom: -150px;
+  left: 12%;
+  width: 220px;
+  height: 220px;
+  border-color: rgba(7, 126, 142, 0.1);
+  box-shadow:
+    0 0 0 24px rgba(7, 126, 142, 0.025),
+    0 0 0 52px rgba(7, 126, 142, 0.018);
+  animation: dashboard-orbit-reverse 22s ease-in-out infinite;
+}
+
+.dashboard-sidebar {
+  position: fixed;
+  overflow: hidden;
+}
+
+.dashboard-sidebar::before,
+.dashboard-sidebar::after {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  content: '';
+}
+
+.dashboard-sidebar::before {
+  top: 12%;
+  right: -95px;
+  width: 205px;
+  height: 205px;
+  border: 1px solid rgba(123, 238, 232, 0.16);
+  box-shadow:
+    0 0 0 22px rgba(123, 238, 232, 0.035),
+    0 0 0 47px rgba(123, 238, 232, 0.02);
+  animation: sidebar-float 12s ease-in-out infinite;
+}
+
+.dashboard-sidebar::after {
+  bottom: 12%;
+  left: -75px;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(
+    circle,
+    rgba(55, 211, 207, 0.18),
+    rgba(55, 211, 207, 0) 68%
+  );
+  animation: sidebar-glow 8s ease-in-out infinite;
+}
+
+.sidebar-brand,
+.sidebar-label,
+.dashboard-nav,
+.sidebar-footer {
+  position: relative;
+  z-index: 1;
+}
+
+.sidebar-logo {
+  animation: logo-pulse 4s ease-in-out infinite;
+}
+
+.dashboard-nav__item {
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-nav__item::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -100%;
+  width: 60%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.12),
+    transparent
+  );
+  content: '';
+  transition: left 500ms ease;
+}
+
+.dashboard-nav__item:hover::after,
+.dashboard-nav__item--active::after {
+  left: 120%;
+}
+
+.dashboard-content {
+  animation: content-reveal 500ms ease both;
+}
+
+.dashboard-header {
+  animation: header-reveal 550ms ease both;
+}
+
+.dashboard-header__actions {
+  animation: header-actions-reveal 650ms 80ms ease both;
+}
+
+.dashboard-toolbar {
+  animation: content-reveal 600ms 120ms ease both;
+}
+
+.stat-card {
+  animation: card-reveal 500ms ease both;
+}
+
+.stat-card:nth-child(1) {
+  animation-delay: 120ms;
+}
+
+.stat-card:nth-child(2) {
+  animation-delay: 180ms;
+}
+
+.stat-card:nth-child(3) {
+  animation-delay: 240ms;
+}
+
+.stat-card:nth-child(4) {
+  animation-delay: 300ms;
+}
+
+.stat-card::before,
+.dashboard-card::before,
+.doctor-card::before,
+.consultation-card::before,
+.location-card::before {
+  position: absolute;
+  top: -70px;
+  right: -45px;
+  width: 150px;
+  height: 150px;
+  border: 1px solid rgba(24, 177, 183, 0.1);
+  border-radius: 50%;
+  pointer-events: none;
+  content: '';
+}
+
+.dashboard-card,
+.doctor-card,
+.consultation-card,
+.location-card {
+  animation: card-reveal 550ms ease both;
+}
+
+.dashboard-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-card::after,
+.doctor-card::after,
+.consultation-card::after,
+.location-card::after {
+  position: absolute;
+  right: 20px;
+  bottom: 18px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #35c8c9;
+  box-shadow:
+    13px -8px 0 rgba(53, 200, 201, 0.42),
+    26px 2px 0 rgba(53, 200, 201, 0.2);
+  opacity: 0.7;
+  pointer-events: none;
+  content: '';
+}
+
+.appointment-row {
+  transition:
+    background 180ms ease,
+    padding-left 180ms ease,
+    transform 180ms ease;
+}
+
+.appointment-row:hover {
+  padding-left: 8px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #f0fbfb, transparent);
+  transform: translateX(2px);
+}
+
+.dashboard-primary,
+.doctor-card__actions button,
+.consultation-card__actions button,
+.location-card__actions button {
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-primary::after,
+.doctor-card__actions button::after,
+.consultation-card__actions button::after,
+.location-card__actions button::after {
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 75%;
+  height: 100%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(255, 255, 255, 0.24),
+    transparent
+  );
+  content: '';
+  transition: left 450ms ease;
+}
+
+.dashboard-primary:hover::after,
+.doctor-card__actions button:hover::after,
+.consultation-card__actions button:hover::after,
+.location-card__actions button:hover::after {
+  left: 125%;
+}
+
+.doctors-manager,
+.consultations-manager,
+.locations-manager {
+  animation: content-reveal 500ms 80ms ease both;
+}
+
+.doctor-card,
+.consultation-card,
+.location-card {
+  will-change: transform;
+}
+
+.doctor-card:nth-child(2),
+.consultation-card:nth-child(2),
+.location-card:nth-child(2) {
+  animation-delay: 80ms;
+}
+
+.doctor-card:nth-child(3),
+.consultation-card:nth-child(3),
+.location-card:nth-child(3) {
+  animation-delay: 160ms;
+}
+
+.doctor-card:nth-child(4),
+.consultation-card:nth-child(4),
+.location-card:nth-child(4) {
+  animation-delay: 240ms;
+}
+
+.doctors-filter,
+.consultations-filter,
+.locations-filter {
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.doctors-filter:focus-within,
+.consultations-filter:focus-within,
+.locations-filter:focus-within {
+  border-color: #6bced2;
+  box-shadow: 0 8px 24px rgba(7, 155, 170, 0.1);
+  transform: translateY(-2px);
+}
+
+@keyframes content-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes header-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes header-actions-reveal {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes card-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dashboard-orbit {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+
+  50% {
+    transform: translate3d(-20px, 18px, 0) rotate(12deg);
+  }
+}
+
+@keyframes dashboard-orbit-reverse {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(18px, -14px, 0);
+  }
+}
+
+@keyframes sidebar-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+
+  50% {
+    transform: translate3d(-12px, 14px, 0) rotate(-8deg);
+  }
+}
+
+@keyframes sidebar-glow {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+}
+
+@keyframes logo-pulse {
+  0%,
+  100% {
+    box-shadow: 0 8px 18px rgba(22, 194, 197, 0.25);
+  }
+
+  50% {
+    box-shadow:
+      0 8px 22px rgba(22, 194, 197, 0.38),
+      0 0 0 5px rgba(22, 194, 197, 0.08);
+  }
+}
+
+@media (max-width: 620px) {
+  .dashboard-page::before {
+    top: 17%;
+    right: -180px;
+    width: 230px;
+    height: 230px;
+  }
+
+  .dashboard-page::after {
+    left: -110px;
+    bottom: -130px;
+  }
+
+  .dashboard-card::after,
+  .doctor-card::after,
+  .consultation-card::after,
+  .location-card::after {
+    right: 14px;
+    bottom: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-page::before,
+  .dashboard-page::after,
+  .dashboard-sidebar::before,
+  .dashboard-sidebar::after,
+  .sidebar-logo,
+  .dashboard-content,
+  .dashboard-header,
+  .dashboard-header__actions,
+  .dashboard-toolbar,
+  .stat-card,
+  .dashboard-card,
+  .doctor-card,
+  .consultation-card,
+  .location-card,
+  .doctors-manager,
+  .consultations-manager,
+  .locations-manager {
+    animation: none;
+  }
+
+  .dashboard-nav__item,
+  .appointment-row,
+  .dashboard-primary,
+  .doctor-card,
+  .consultation-card,
+  .location-card {
+    transition: none;
+  }
+}

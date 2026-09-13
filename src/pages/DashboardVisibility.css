@@ -1,0 +1,24 @@
+.dashboard-header {
+  width: 100%;
+  border-color: #bbdce0;
+}
+
+.dashboard-nav__item {
+  font-size: 0.88rem;
+}
+
+.sidebar-logo {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.sidebar-logo img {
+  background: transparent;
+}
+
+@media (max-width: 620px) {
+  .dashboard-nav__item {
+    font-size: 0.84rem;
+  }
+}

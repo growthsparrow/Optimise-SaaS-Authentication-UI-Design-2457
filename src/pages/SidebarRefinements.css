@@ -1,0 +1,25 @@
+.dashboard-page .dashboard-nav {
+  gap: 4px;
+}
+
+.dashboard-page .dashboard-nav__item {
+  min-height: 41px;
+}
+
+.dashboard-page .sidebar-footer-spacer {
+  min-height: 28px;
+}
+
+@media (max-width: 620px) {
+  .dashboard-page .dashboard-nav {
+    gap: 4px;
+  }
+
+  .dashboard-page .dashboard-nav__item {
+    min-height: 39px;
+  }
+
+  .dashboard-page .sidebar-footer-spacer {
+    min-height: 22px;
+  }
+}
