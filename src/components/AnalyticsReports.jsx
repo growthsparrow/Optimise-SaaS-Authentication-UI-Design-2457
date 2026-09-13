@@ -1,7 +1,21 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
-import {listDashboardBookings} from '../services/dashboardService';
+import {
+  ChartPanel,
+  HorizontalBars,
+  OutcomeDonut,
+  TrendChart
+} from './AnalyticsChart';
+import { listDashboardBookings } from '../services/dashboardService';
+import {
+  buildTrend,
+  countRows,
+  formatCurrency,
+  getAnalyticsMetrics,
+  getDateLimit,
+  sumRows
+} from '../utils/analyticsUtils';
 import {
   exportAppointmentsToExcel,
   exportAppointmentsToPdf
@@ -17,47 +31,18 @@ const {
   FiDownload,
   FiFileText,
   FiMapPin,
+  FiPieChart,
   FiTrendingUp,
   FiUser,
+  FiUsers,
   FiXCircle
 } = FiIcons;
 
 const reportPeriods = [
-  {value: '30', label: 'Last 30 days'},
-  {value: '90', label: 'Last 90 days'},
-  {value: 'all', label: 'All appointments'}
+  { value: '30', label: 'Last 30 days' },
+  { value: '90', label: 'Last 90 days' },
+  { value: 'all', label: 'All appointments' }
 ];
-
-function dateKey(date) {
-  return date.toISOString().slice(0, 10);
-}
-
-function getDateLimit(period) {
-  if (period === 'all') {
-    return '';
-  }
-
-  const date = new Date();
-  date.setHours(12, 0, 0, 0);
-  date.setDate(date.getDate() - Number(period));
-
-  return dateKey(date);
-}
-
-function currency(value) {
-  return `₹${Number(value || 0).toLocaleString('en-IN')}`;
-}
-
-function countBy(bookings, getLabel) {
-  const counts = new Map();
-
-  bookings.forEach((booking) => {
-    const label = getLabel(booking) || 'Not assigned';
-    counts.set(label, (counts.get(label) || 0) + 1);
-  });
-
-  return [...counts.entries()].sort((a, b) => b[1] - a[1]);
-}
 
 function AnalyticsReports() {
   const [bookings, setBookings] = useState([]);
@@ -75,66 +60,60 @@ function AnalyticsReports() {
   const reportBookings = useMemo(() => {
     const limit = getDateLimit(period);
 
-    return bookings.filter((booking) => (
-      !limit || booking.booking_date >= limit
-    ));
+    return bookings.filter(
+      (booking) => !limit || booking.booking_date >= limit
+    );
   }, [bookings, period]);
 
-  const metrics = useMemo(() => {
-    const completed = reportBookings.filter(
-      (booking) => booking.status === 'visited'
-    );
-    const confirmed = reportBookings.filter(
-      (booking) => ['confirmed', 'rescheduled'].includes(booking.status)
-    );
-    const noShows = reportBookings.filter(
-      (booking) => booking.status === 'no_show'
-    );
-    const revenue = completed.reduce(
-      (total, booking) => total + Number(
-        booking.consultation?.consultation_fees_inr || 0
-      ),
-      0
-    );
-
-    return {
-      total: reportBookings.length,
-      confirmed: confirmed.length,
-      completed: completed.length,
-      noShows: noShows.length,
-      revenue
-    };
-  }, [reportBookings]);
-
-  const consultationRows = useMemo(
-    () => countBy(
-      reportBookings,
-      (booking) => booking.consultation?.consultation_name
-    ),
+  const metrics = useMemo(
+    () => getAnalyticsMetrics(reportBookings),
     [reportBookings]
   );
 
   const doctorRows = useMemo(
-    () => countBy(
-      reportBookings,
-      (booking) => booking.doctor?.doctor_name
-    ),
+    () => countRows(reportBookings, (booking) => booking.doctor?.doctor_name),
     [reportBookings]
   );
 
   const locationRows = useMemo(
-    () => countBy(
-      reportBookings,
-      (booking) => booking.location?.location_name
-    ),
+    () => countRows(reportBookings, (booking) => booking.location?.location_name),
     [reportBookings]
+  );
+
+  const consultationRows = useMemo(
+    () =>
+      countRows(
+        reportBookings,
+        (booking) => booking.consultation?.consultation_name
+      ),
+    [reportBookings]
+  );
+
+  const patientRows = useMemo(
+    () => countRows(reportBookings, (booking) => booking.patient_name),
+    [reportBookings]
+  );
+
+  const revenueRows = useMemo(
+    () =>
+      sumRows(
+        reportBookings.filter((booking) => booking.status === 'visited'),
+        (booking) => booking.consultation?.consultation_name,
+        (booking) => booking.consultation?.consultation_fees_inr
+      ),
+    [reportBookings]
+  );
+
+  const trendPoints = useMemo(
+    () => buildTrend(reportBookings, period),
+    [reportBookings, period]
   );
 
   if (loading) {
     return (
       <section className="analytics-reports analytics-reports--loading">
         <div className="dashboard-loader" aria-label="Loading analytics" />
-        <span>Preparing analytics and reports…</span>
+        <span>Preparing detailed analytics…</span>
       </section>
     );
   }
@@ -146,17 +125,14 @@ function AnalyticsReports() {
           <span className="dashboard-eyebrow">Workspace intelligence</span>
           <h2>Analytics and Reports</h2>
           <p>
-            Understand appointment performance, patient flow and consultation
-            demand across your healthcare workspace.
+            Explore performance across doctors, locations, consultations and
+            patients with live appointment data.
           </p>
         </div>
 
         <label className="analytics-period">
           <span>Report period</span>
-          <select
-            value={period}
-            onChange={(event) => setPeriod(event.target.value)}
-          >
+          <select value={period} onChange={(event) => setPeriod(event.target.value)}>
             {reportPeriods.map((option) => (
               <option value={option.value} key={option.value}>
                 {option.label}
@@ -175,15 +151,15 @@ function AnalyticsReports() {
       <div className="analytics-kpis">
         <AnalyticsCard
           icon={FiCalendar}
-          label="Total appointments"
+          label="Appointments"
           value={metrics.total}
-          detail="Appointments in this report"
+          detail="Bookings in selected period"
         />
         <AnalyticsCard
-          icon={FiClock}
-          label="Confirmed and rescheduled"
-          value={metrics.confirmed}
-          detail="Upcoming or active bookings"
+          icon={FiUsers}
+          label="Unique patients"
+          value={metrics.uniquePatients}
+          detail="Distinct patient records"
         />
         <AnalyticsCard
           icon={FiCheckCircle}
@@ -193,38 +169,94 @@ function AnalyticsReports() {
         />
         <AnalyticsCard
           icon={FiTrendingUp}
-          label="Collected consultation value"
-          value={currency(metrics.revenue)}
-          detail="Based on completed visits"
+          label="Collected value"
+          value={formatCurrency(metrics.revenue)}
+          detail="Completed consultation value"
           currencyValue
+        />
+        <AnalyticsCard
+          icon={FiActivity}
+          label="Average patient age"
+          value={metrics.averageAge ? `${metrics.averageAge} yrs` : '—'}
+          detail={`${metrics.noShowRate}% no-show rate`}
         />
       </div>
 
-      <section className="analytics-report-grid">
-        <ReportSection
-          icon={FiBarChart2}
-          title="Consultation performance"
-          description="Most requested consultation types"
-          rows={consultationRows}
-        />
-        <ReportSection
-          icon={FiUser}
-          title="Doctor workload"
-          description="Appointments by doctor"
-          rows={doctorRows}
-        />
-        <ReportSection
-          icon={FiMapPin}
-          title="Location demand"
-          description="Appointments by location"
-          rows={locationRows}
-        />
-        <section className="analytics-panel analytics-status-panel">
-          <PanelHeading
-            icon={FiActivity}
-            title="Appointment outcomes"
-            description="Current status distribution"
+      <div className="analytics-report-grid">
+        <ChartPanel
+          icon={FiTrendingUp}
+          title="Appointment trend"
+          description="Daily booking volume for the selected period"
+          className="analytics-panel--wide"
+        >
+          <TrendChart points={trendPoints} />
+        </ChartPanel>
+
+        <ChartPanel
+          icon={FiPieChart}
+          title="Appointment outcomes"
+          description="How appointments are progressing"
+        >
+          <OutcomeDonut
+            metrics={{
+              total: metrics.total,
+              completed: metrics.completed,
+              confirmed: metrics.confirmed,
+              noShows: metrics.noShows,
+              cancelled: metrics.cancelled
+            }}
           />
+        </ChartPanel>
+
+        <ChartPanel
+          icon={FiUser}
+          title="Doctor analytics"
+          description="Appointment workload by doctor"
+        >
+          <HorizontalBars rows={doctorRows} />
+        </ChartPanel>
+
+        <ChartPanel
+          icon={FiMapPin}
+          title="Location analytics"
+          description="Demand across business locations"
+        >
+          <HorizontalBars rows={locationRows} />
+        </ChartPanel>
+
+        <ChartPanel
+          icon={FiBarChart2}
+          title="Consultation analytics"
+          description="Most requested consultation services"
+        >
+          <HorizontalBars rows={consultationRows} />
+        </ChartPanel>
+
+        <ChartPanel
+          icon={FiTrendingUp}
+          title="Revenue by consultation"
+          description="Collected value from completed visits"
+        >
+          <HorizontalBars
+            rows={revenueRows}
+            valueFormatter={formatCurrency}
+          />
+        </ChartPanel>
+
+        <ChartPanel
+          icon={FiUsers}
+          title="Patient activity"
+          description="Patients with the most appointments"
+        >
+          <HorizontalBars rows={patientRows} />
+        </ChartPanel>
+
+        <ChartPanel
+          icon={FiClock}
+          title="Operational summary"
+          description="Key service and attendance indicators"
+          className="analytics-status-panel"
+        >
           <StatusRow
             icon={FiCheckCircle}
             label="Completed visits"
@@ -243,12 +275,18 @@ function AnalyticsReports() {
             value={metrics.noShows}
             tone="warning"
           />
-        </section>
-      </section>
+          <StatusRow
+            icon={FiXCircle}
+            label="Cancelled"
+            value={metrics.cancelled}
+            tone="danger"
+          />
+        </ChartPanel>
+      </div>
 
       <footer className="analytics-reports__footer">
         <span>
-          Export the appointments included in this report with patient, doctor,
+          Export the filtered appointment data with doctor, patient,
           consultation and location details.
         </span>
         <div>
@@ -274,7 +312,13 @@ function AnalyticsReports() {
   );
 }
 
-function AnalyticsCard({icon, label, value, detail, currencyValue}) {
+function AnalyticsCard({
+  icon,
+  label,
+  value,
+  detail,
+  currencyValue = false
+}) {
   return (
     <article className="analytics-kpi">
       <div className="analytics-kpi__label">
@@ -289,46 +333,7 @@ function AnalyticsCard({icon, label, value, detail, currencyValue}) {
   );
 }
 
-function PanelHeading({icon, title, description}) {
-  return (
-    <div className="analytics-panel__heading">
-      <SafeIcon icon={icon} />
-      <div>
-        <h3>{title}</h3>
-        <p>{description}</p>
-      </div>
-    </div>
-  );
-}
-
-function ReportSection({icon, title, description, rows}) {
-  const maximum = rows[0]?.[1] || 1;
-
-  return (
-    <section className="analytics-panel">
-      <PanelHeading icon={icon} title={title} description={description} />
-      {rows.length ? (
-        <div className="analytics-bars">
-          {rows.slice(0, 6).map(([label, value]) => (
-            <div className="analytics-bar-row" key={label}>
-              <div className="analytics-bar-row__label">
-                <span>{label}</span>
-                <strong>{value}</strong>
-              </div>
-              <div className="analytics-bar">
-                <span style={{width: `${(value / maximum) * 100}%`}} />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="analytics-empty">No appointment data for this period.</p>
-      )}
-    </section>
-  );
-}
-
-function StatusRow({icon, label, value, tone}) {
+function StatusRow({ icon, label, value, tone }) {
   return (
     <div className="analytics-status-row">
       <SafeIcon icon={icon} />
