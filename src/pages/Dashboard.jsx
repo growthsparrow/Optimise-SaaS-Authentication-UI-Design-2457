@@ -2,6 +2,7 @@ import React,{useEffect,useState} from 'react';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 import DashboardSidebar from '../components/DashboardSidebar';
+import BookingPageManager from '../components/BookingPageManager';
 import ConsultationsManager from '../components/ConsultationsManager';
 import DoctorsManager from '../components/DoctorsManager';
 import LocationsManager from '../components/LocationsManager';
@@ -46,7 +47,6 @@ function Dashboard() {
   },[]);
 
   const businessName=profile?.user_metadata?.business_name?.trim() || 'your workspace';
-  const customerName=profile?.user_metadata?.name?.trim() || 'Customer';
 
   const handleSignOut=async ()=> {
     setSigningOut(true);
@@ -79,7 +79,9 @@ function Dashboard() {
           </div>
 
           <div className="dashboard-header__actions">
-            <span className="dashboard-user">{customerName}</span>
+            <span className="dashboard-user">
+              {profile?.user_metadata?.name?.trim() || 'Customer'}
+            </span>
             <button
               className="dashboard-signout"
               onClick={handleSignOut}
@@ -97,6 +99,8 @@ function Dashboard() {
           <ConsultationsManager />
         ) : activeItem==='Manage Locations' ? (
           <LocationsManager />
+        ) : activeItem==='Manage Booking Page' ? (
+          <BookingPageManager businessName={businessName} />
         ) : activeItem==='Profile Management' ? (
           <ProfileManager />
         ) : (
