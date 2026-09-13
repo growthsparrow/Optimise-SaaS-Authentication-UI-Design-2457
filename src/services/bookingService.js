@@ -3,11 +3,22 @@ import supabase from '../supabase/supabase';
 const locationsTable = 'business_locations_1789300875912';
 const doctorsTable = 'doctors_1789298737910';
 const consultationsTable = 'consultations_1789302054187';
+const CACHE_TTL = 30000;
+
+const locationsCache = {
+  data: null,
+  expiresAt: 0
+};
+
+const doctorsCache = new Map();
+const consultationsCache = new Map();
 
 async function listDoctorVacations(doctorId) {
   const {data, error} = await supabase.rpc(
     'get_active_doctor_vacations_1789321000000',
-    {doctor_id_value: doctorId}
+    {
+      doctor_id_value: doctorId
+    }
   );
 
   if (error) {
@@ -17,7 +28,30 @@ async function listDoctorVacations(doctorId) {
   return data || [];
 }
 
+function getCached(cache, key) {
+  const entry = cache.get(key);
+
+  if (entry && entry.expiresAt > Date.now()) {
+    return entry.data;
+  }
+
+  return null;
+}
+
+function setCached(cache, key, data) {
+  cache.set(key, {
+    data,
+    expiresAt: Date.now() + CACHE_TTL
+  });
+
+  return data;
+}
+
 export async function listBookingLocations() {
+  if (locationsCache.data && locationsCache.expiresAt > Date.now()) {
+    return locationsCache.data;
+  }
+
   const {data, error} = await supabase
     .from(locationsTable)
     .select('*')
@@ -29,16 +63,25 @@ export async function listBookingLocations() {
     throw error;
   }
 
-  return data || [];
+  locationsCache.data = data || [];
+  locationsCache.expiresAt = Date.now() + CACHE_TTL;
+  return locationsCache.data;
 }
 
 export async function listBookingDoctors(locationId) {
-  const {data: locationConsultations, error: consultationError} = await supabase
-    .from(consultationsTable)
-    .select('doctor_ids')
-    .eq('is_archived', false)
-    .eq('is_available_for_booking', true)
-    .contains('location_ids', [locationId]);
+  const cachedDoctors = getCached(doctorsCache, locationId);
+
+  if (cachedDoctors) {
+    return cachedDoctors;
+  }
+
+  const {data: locationConsultations, error: consultationError} =
+    await supabase
+      .from(consultationsTable)
+      .select('doctor_ids')
+      .eq('is_archived', false)
+      .eq('is_available_for_booking', true)
+      .contains('location_ids', [locationId]);
 
   if (consultationError) {
     throw consultationError;
@@ -53,7 +96,7 @@ export async function listBookingDoctors(locationId) {
   ];
 
   if (!doctorIds.length) {
-    return [];
+    return setCached(doctorsCache, locationId, []);
   }
 
   const {data, error} = await supabase
@@ -68,15 +111,24 @@ export async function listBookingDoctors(locationId) {
     throw error;
   }
 
-  return Promise.all(
+  const doctors = await Promise.all(
     (data || []).map(async (doctor) => ({
       ...doctor,
       vacations: await listDoctorVacations(doctor.id)
     }))
   );
+
+  return setCached(doctorsCache, locationId, doctors);
 }
 
 export async function listBookingConsultations(doctorId, locationId) {
+  const cacheKey = `${doctorId}:${locationId || 'all'}`;
+  const cachedConsultations = getCached(consultationsCache, cacheKey);
+
+  if (cachedConsultations) {
+    return cachedConsultations;
+  }
+
   let query = supabase
     .from(consultationsTable)
     .select('*')
@@ -94,13 +146,15 @@ export async function listBookingConsultations(doctorId, locationId) {
     throw error;
   }
 
-  return data || [];
+  return setCached(consultationsCache, cacheKey, data || []);
 }
 
 export async function findFutureBookings(phoneNumber) {
   const {data, error} = await supabase.rpc(
     'find_future_patient_bookings_1789315000000',
-    {patient_phone: phoneNumber}
+    {
+      patient_phone: phoneNumber
+    }
   );
 
   if (error) {

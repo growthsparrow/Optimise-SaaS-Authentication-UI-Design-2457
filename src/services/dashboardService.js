@@ -7,12 +7,35 @@ const consultationsTable = 'consultations_1789302054187';
 const locationsTable = 'business_locations_1789300875912';
 const vacationFunction = 'get_active_doctor_vacations_1789321000000';
 
+const BOOKINGS_CACHE_TTL = 15000;
+
+let bookingsCache = {
+  key: '',
+  data: null,
+  expiresAt: 0
+};
+
+let bookingsRequest = null;
+
 function getTodayKey() {
   return new Date().toISOString().slice(0, 10);
 }
 
 function createLookup(rows) {
   return new Map((rows || []).map((row) => [row.id, row]));
+}
+
+function getCacheKey() {
+  const member = getTeamMemberSession();
+  return member?.member_id ? `member:${member.member_id}` : 'owner';
+}
+
+function invalidateDashboardBookings() {
+  bookingsCache = {
+    key: '',
+    data: null,
+    expiresAt: 0
+  };
 }
 
 async function addDoctorVacations(doctors) {
@@ -46,11 +69,17 @@ async function listOwnerBookings() {
   }
 
   const bookings = data || [];
-  const doctorIds = [...new Set(bookings.map((booking) => booking.doctor_id))];
-  const consultationIds = [
-    ...new Set(bookings.map((booking) => booking.consultation_id))
+  const doctorIds = [
+    ...new Set(bookings.map((booking) => booking.doctor_id).filter(Boolean))
   ];
-  const locationIds = [...new Set(bookings.map((booking) => booking.location_id))];
+  const consultationIds = [
+    ...new Set(
+      bookings.map((booking) => booking.consultation_id).filter(Boolean)
+    )
+  ];
+  const locationIds = [
+    ...new Set(bookings.map((booking) => booking.location_id).filter(Boolean))
+  ];
 
   const [doctorResult, consultationResult, locationResult] = await Promise.all([
     doctorIds.length
@@ -73,16 +102,13 @@ async function listOwnerBookings() {
       : {data: [], error: null}
   ]);
 
-  if (
+  const relatedError =
     doctorResult.error ||
     consultationResult.error ||
-    locationResult.error
-  ) {
-    throw (
-      doctorResult.error ||
-      consultationResult.error ||
-      locationResult.error
-    );
+    locationResult.error;
+
+  if (relatedError) {
+    throw relatedError;
   }
 
   const doctors = await addDoctorVacations(doctorResult.data);
@@ -98,25 +124,64 @@ async function listOwnerBookings() {
   }));
 }
 
-export async function listDashboardBookings() {
-  const member = getTeamMemberSession();
-
-  if (member?.member_id) {
-    const {data, error} = await supabase.rpc(
-      'get_team_member_bookings_1789330000000',
-      {
-        member_id_value: member.member_id
-      }
-    );
-
-    if (error) {
-      throw error;
+async function listTeamMemberBookings(memberId) {
+  const {data, error} = await supabase.rpc(
+    'get_team_member_bookings_1789330000000',
+    {
+      member_id_value: memberId
     }
+  );
 
-    return data || [];
+  if (error) {
+    throw error;
   }
 
-  return listOwnerBookings();
+  return data || [];
+}
+
+export async function listDashboardBookings({force = false} = {}) {
+  const cacheKey = getCacheKey();
+  const cacheIsValid =
+    !force &&
+    bookingsCache.key === cacheKey &&
+    bookingsCache.data &&
+    bookingsCache.expiresAt > Date.now();
+
+  if (cacheIsValid) {
+    return bookingsCache.data;
+  }
+
+  if (bookingsRequest && bookingsRequest.key === cacheKey && !force) {
+    return bookingsRequest.promise;
+  }
+
+  const member = getTeamMemberSession();
+  const promise = (
+    member?.member_id
+      ? listTeamMemberBookings(member.member_id)
+      : listOwnerBookings()
+  )
+    .then((data) => {
+      bookingsCache = {
+        key: cacheKey,
+        data,
+        expiresAt: Date.now() + BOOKINGS_CACHE_TTL
+      };
+
+      return data;
+    })
+    .finally(() => {
+      if (bookingsRequest?.key === cacheKey) {
+        bookingsRequest = null;
+      }
+    });
+
+  bookingsRequest = {
+    key: cacheKey,
+    promise
+  };
+
+  return promise;
 }
 
 export async function updateDashboardBookingStatus(bookingId, status) {
@@ -136,6 +201,7 @@ export async function updateDashboardBookingStatus(bookingId, status) {
       throw error;
     }
 
+    invalidateDashboardBookings();
     return data;
   }
 
@@ -153,6 +219,7 @@ export async function updateDashboardBookingStatus(bookingId, status) {
     throw error;
   }
 
+  invalidateDashboardBookings();
   return data;
 }
 
@@ -168,17 +235,49 @@ export function markBookingNoShow(bookingId) {
   return updateDashboardBookingStatus(bookingId, 'no_show');
 }
 
-export function rescheduleDashboardBooking(bookingId, bookingDate, bookingTime) {
-  return updateDashboardBookingStatus(bookingId, 'rescheduled').then(() =>
-    supabase
-      .from(bookingsTable)
-      .update({
-        booking_date: bookingDate,
-        booking_time: bookingTime,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', bookingId)
-  );
+export async function rescheduleDashboardBooking(
+  bookingId,
+  bookingDate,
+  bookingTime
+) {
+  const member = getTeamMemberSession();
+
+  if (member?.member_id) {
+    const {data, error} = await supabase.rpc(
+      'update_team_member_booking_status_1789330000000',
+      {
+        member_id_value: member.member_id,
+        booking_id_value: bookingId,
+        status_value: 'rescheduled'
+      }
+    );
+
+    if (error) {
+      throw error;
+    }
+
+    invalidateDashboardBookings();
+    return data;
+  }
+
+  const {data, error} = await supabase
+    .from(bookingsTable)
+    .update({
+      status: 'rescheduled',
+      booking_date: bookingDate,
+      booking_time: bookingTime,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', bookingId)
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  invalidateDashboardBookings();
+  return data;
 }
 
 export function getDashboardMetrics(bookings) {
@@ -222,7 +321,7 @@ export function getDashboardMetrics(bookings) {
 
 export function subscribeToDashboardBookings(onChange) {
   return supabase
-    .channel('dashboard-bookings-live')
+    .channel(`dashboard-bookings-live-${Date.now()}`)
     .on(
       'postgres_changes',
       {
@@ -230,7 +329,10 @@ export function subscribeToDashboardBookings(onChange) {
         schema: 'public',
         table: bookingsTable
       },
-      onChange
+      () => {
+        invalidateDashboardBookings();
+        onChange();
+      }
     )
     .subscribe();
 }
