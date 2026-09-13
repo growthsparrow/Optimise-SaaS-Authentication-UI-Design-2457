@@ -5,6 +5,7 @@ const profilesTable='user_profiles_1789400000000';
 const adminsTable='super_admins_1789400000000';
 const packagesTable='subscription_packages_1789400000000';
 const customerIdsTable='customer_ids_1789307150923';
+const teamMembersTable='team_members_1789325000000';
 
 export async function isSuperAdmin() {
   const {data:userData,error:userError}=await adminSupabase.auth.getUser();
@@ -71,10 +72,15 @@ export async function listUsers() {
     (customerIds || []).map((row)=> [row.id,row.customer_id])
   );
 
-  return (profiles || []).map((profile)=> ({
-    ...profile,
-    customer_id:customerIdByUserId.get(profile.id) || ''
-  }));
+  return (profiles || []).map((profile)=> {
+    const customerId=customerIdByUserId.get(profile.id) || '';
+
+    return {
+      ...profile,
+      user_code:profile.user_code || customerId || 'Not assigned',
+      customer_id:customerId || profile.user_code || 'Not assigned'
+    };
+  });
 }
 
 export async function setUserEnabled(userId,isEnabled) {
@@ -176,6 +182,103 @@ export async function setPackagePublished(packageId,isPublished) {
       updated_at:new Date().toISOString()
     })
     .eq('id',packageId)
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function getAdminProfile() {
+  const {data,error}=await adminSupabase.auth.getUser();
+
+  if (error) {
+    throw error;
+  }
+
+  return data.user;
+}
+
+export async function updateAdminProfile(values) {
+  const {data,error}=await adminSupabase.auth.updateUser({
+    data:{
+      name:values.name.trim(),
+      role:'Super administrator'
+    }
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data.user;
+}
+
+export async function updateAdminPassword(password) {
+  const {error}=await adminSupabase.auth.updateUser({password});
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function listAdminTeamMembers() {
+  const {data,error}=await adminSupabase
+    .from(teamMembersTable)
+    .select('*')
+    .order('full_name');
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}
+
+export async function saveAdminTeamMember(values,existingMember) {
+  const payload={
+    user_id:values.workspaceUserId,
+    full_name:values.fullName.trim(),
+    email:values.email.trim().toLowerCase(),
+    phone_number:values.phoneNumber.trim(),
+    role:values.role.trim() || 'Team member',
+    status:values.status,
+    updated_at:new Date().toISOString()
+  };
+
+  const query=existingMember
+    ? adminSupabase
+      .from(teamMembersTable)
+      .update(payload)
+      .eq('id',existingMember.id)
+      .select()
+      .single()
+    : adminSupabase
+      .from(teamMembersTable)
+      .insert(payload)
+      .select()
+      .single();
+
+  const {data,error}=await query;
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function setAdminTeamMemberStatus(memberId,status) {
+  const {data,error}=await adminSupabase
+    .from(teamMembersTable)
+    .update({
+      status,
+      updated_at:new Date().toISOString()
+    })
+    .eq('id',memberId)
     .select()
     .single();
 

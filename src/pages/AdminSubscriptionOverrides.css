@@ -1,19 +1,55 @@
-.admin-account-actions {
-  display: grid;
-  gap: 7px;
-  min-width: 126px;
-}
-
-.admin-account-actions .admin-row-action {
+.admin-account-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
-  min-height: 34px;
+  min-width: 86px;
+  min-height: 36px;
+  padding: 8px 12px;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: .63rem;
+  font-weight: 800;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background 160ms ease,border-color 160ms ease,box-shadow 160ms ease,transform 160ms ease;
 }
 
-.admin-account-actions .admin-row-action:first-child {
-  border-color: #a9dfe1;
-  background: #effbfb;
+.admin-account-toggle--enabled {
+  border-color: #b8e3d0;
+  background: #e8f8f1;
+  color: #168764;
 }
 
-.admin-account-actions .admin-row-action svg {
-  width: 13px;
+.admin-account-toggle--disabled {
+  border-color: #efcaca;
+  background: #fff0f0;
+  color: #b86161;
+}
+
+.admin-account-toggle:hover {
+  box-shadow: 0 6px 14px rgba(7,85,100,.1);
+  transform: translateY(-1px);
+}
+
+.admin-account-toggle--enabled:hover {
+  border-color: #80cdaa;
+  background: #d9f4e8;
+}
+
+.admin-account-toggle--disabled:hover {
+  border-color: #dc9c9c;
+  background: #ffe3e3;
+}
+
+.admin-account-toggle:focus-visible {
+  outline: 3px solid rgba(7,155,170,.22);
+  outline-offset: 2px;
+}
+
+@media (max-width: 620px) {
+  .admin-account-toggle {
+    min-width: 84px;
+    min-height: 38px;
+  }
 }
