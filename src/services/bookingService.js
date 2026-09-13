@@ -4,6 +4,19 @@ const locationsTable = 'business_locations_1789300875912';
 const doctorsTable = 'doctors_1789298737910';
 const consultationsTable = 'consultations_1789302054187';
 
+async function listDoctorVacations(doctorId) {
+  const {data, error} = await supabase.rpc(
+    'get_active_doctor_vacations_1789321000000',
+    {doctor_id_value: doctorId}
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+}
+
 export async function listBookingLocations() {
   const {data, error} = await supabase
     .from(locationsTable)
@@ -12,7 +25,10 @@ export async function listBookingLocations() {
     .eq('is_available_for_booking', true)
     .order('location_name');
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
+
   return data || [];
 }
 
@@ -24,7 +40,9 @@ export async function listBookingDoctors(locationId) {
     .eq('is_available_for_booking', true)
     .contains('location_ids', [locationId]);
 
-  if (consultationError) throw consultationError;
+  if (consultationError) {
+    throw consultationError;
+  }
 
   const doctorIds = [
     ...new Set(
@@ -34,7 +52,9 @@ export async function listBookingDoctors(locationId) {
     )
   ];
 
-  if (!doctorIds.length) return [];
+  if (!doctorIds.length) {
+    return [];
+  }
 
   const {data, error} = await supabase
     .from(doctorsTable)
@@ -44,8 +64,16 @@ export async function listBookingDoctors(locationId) {
     .in('id', doctorIds)
     .order('doctor_name');
 
-  if (error) throw error;
-  return data || [];
+  if (error) {
+    throw error;
+  }
+
+  return Promise.all(
+    (data || []).map(async (doctor) => ({
+      ...doctor,
+      vacations: await listDoctorVacations(doctor.id)
+    }))
+  );
 }
 
 export async function listBookingConsultations(doctorId, locationId) {
@@ -62,7 +90,10 @@ export async function listBookingConsultations(doctorId, locationId) {
 
   const {data, error} = await query.order('consultation_name');
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
+
   return data || [];
 }
 
@@ -72,7 +103,10 @@ export async function findFutureBookings(phoneNumber) {
     {patient_phone: phoneNumber}
   );
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
+
   return data || [];
 }
 
@@ -93,7 +127,10 @@ export async function createBooking(values) {
     }
   );
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
+
   return data?.[0];
 }
 
@@ -113,6 +150,9 @@ export async function rescheduleBooking(
     }
   );
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
+
   return data?.[0];
 }

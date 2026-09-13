@@ -1,26 +1,39 @@
-import React, { useEffect, useState } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import React, {useEffect, useState} from 'react';
+import {Navigate, useLocation} from 'react-router-dom';
 import supabase from '../supabase/supabase';
+import {getTeamMemberSession} from '../services/teamMemberService';
 
-function ProtectedRoute({ children }) {
+function ProtectedRoute({children}) {
   const [state, setState] = useState({
     loading: true,
-    session: null
+    session: null,
+    member: null
   });
   const location = useLocation();
 
   useEffect(() => {
     let active = true;
 
-    supabase.auth.getSession().then(({ data }) => {
+    Promise.all([
+      supabase.auth.getSession(),
+      Promise.resolve(getTeamMemberSession())
+    ]).then(([sessionResult, member]) => {
       if (active) {
-        setState({ loading: false, session: data.session });
+        setState({
+          loading: false,
+          session: sessionResult.data.session,
+          member
+        });
       }
     });
 
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {data} = supabase.auth.onAuthStateChange((_event, session) => {
       if (active) {
-        setState({ loading: false, session });
+        setState((current) => ({
+          ...current,
+          loading: false,
+          session
+        }));
       }
     });
 
@@ -38,8 +51,8 @@ function ProtectedRoute({ children }) {
     );
   }
 
-  if (!state.session) {
-    return <Navigate to="/" replace state={{ from: location }} />;
+  if (!state.session && !state.member) {
+    return <Navigate to="/" replace state={{from: location}} />;
   }
 
   return children;
