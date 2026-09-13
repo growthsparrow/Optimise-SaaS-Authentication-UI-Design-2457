@@ -1,16 +1,1 @@
-import React from 'react';
-
-const logoUrl = 'https://media-manager-c.questera.ai/greta-media/b00cad02cfeb55a1b54773f1814a28783966fac1191f97d55bc1db6658c27e2897de2ada8340abcbb890f1cad119b01d/images/aW1hZ2UvcG5n/583122e1068a93e947bbf988744900e9.png';
-
-function Brand({ compact = false }) {
-  return (
-    <div className={`brand ${compact ? 'brand--compact' : ''}`}>
-      <span className="brand__mark">
-        <img src={logoUrl} alt="Optimise logo" />
-      </span>
-      <span className="brand__name">Optimise</span>
-    </div>
-  );
-}
-
-export default Brand;
+import React from 'react';const logoUrl='https://media-manager-c.questera.ai/greta-media/b00cad02cfeb55a1b54773f1814a28783966fac1191f97d55bc1db6658c27e2897de2ada8340abcbb890f1cad119b01d/images/aW1hZ2UvcG5n/583122e1068a93e947bbf988744900e9.png';function Brand({compact=false}){return <div className={`brand ${compact?'brand--compact':''}`}><span className="brand__mark"><img src={logoUrl} alt="Optimise logo"/></span><span className="brand__name">Optimise</span></div>;}export default Brand;

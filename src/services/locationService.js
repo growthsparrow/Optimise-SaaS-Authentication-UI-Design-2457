@@ -3,7 +3,7 @@ import supabase from '../supabase/supabase';
 const locationsTable = 'business_locations_1789300875912';
 
 export async function listLocations() {
-  const { data, error } = await supabase
+  const {data, error} = await supabase
     .from(locationsTable)
     .select('*')
     .eq('is_archived', false)
@@ -14,7 +14,7 @@ export async function listLocations() {
 }
 
 export async function listBookableLocations() {
-  const { data, error } = await supabase
+  const {data, error} = await supabase
     .from(locationsTable)
     .select('*')
     .eq('is_archived', false)
@@ -38,34 +38,18 @@ export async function saveLocation(values, existingLocation) {
   };
 
   const query = existingLocation
-    ? supabase
-        .from(locationsTable)
-        .update(payload)
-        .eq('id', existingLocation.id)
-        .select()
-        .single()
-    : supabase
-        .from(locationsTable)
-        .insert(payload)
-        .select()
-        .single();
+    ? supabase.from(locationsTable).update(payload).eq('id', existingLocation.id).select().single()
+    : supabase.from(locationsTable).insert(payload).select().single();
 
-  const { data, error } = await query;
-
+  const {data, error} = await query;
   if (error) throw error;
   return data;
 }
 
-export async function setLocationBookingStatus(
-  locationId,
-  isAvailableForBooking
-) {
-  const { data, error } = await supabase
+export async function setLocationBookingStatus(locationId, isAvailableForBooking) {
+  const {data, error} = await supabase
     .from(locationsTable)
-    .update({
-      is_available_for_booking: isAvailableForBooking,
-      updated_at: new Date().toISOString()
-    })
+    .update({is_available_for_booking: isAvailableForBooking, updated_at: new Date().toISOString()})
     .eq('id', locationId)
     .select()
     .single();
@@ -75,13 +59,21 @@ export async function setLocationBookingStatus(
 }
 
 export async function archiveLocation(locationId) {
-  const { error } = await supabase
+  const {error} = await supabase
     .from(locationsTable)
-    .update({
-      is_archived: true,
-      updated_at: new Date().toISOString()
-    })
+    .update({is_archived: true, updated_at: new Date().toISOString()})
     .eq('id', locationId);
 
   if (error) throw error;
+}
+
+export async function getLocation(locationId) {
+  const {data, error} = await supabase
+    .from(locationsTable)
+    .select('*')
+    .eq('id', locationId)
+    .single();
+
+  if (error) throw error;
+  return data;
 }

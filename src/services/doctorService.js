@@ -4,7 +4,7 @@ const doctorsTable = 'doctors_1789298737910';
 const vacationsTable = 'doctor_vacations_1789298737910';
 
 export async function listDoctors() {
-  const { data, error } = await supabase
+  const {data, error} = await supabase
     .from(doctorsTable)
     .select('*')
     .eq('is_archived', false)
@@ -15,7 +15,7 @@ export async function listDoctors() {
 }
 
 export async function listBookableDoctors() {
-  const { data, error } = await supabase
+  const {data, error} = await supabase
     .from(doctorsTable)
     .select('*')
     .eq('is_archived', false)
@@ -41,34 +41,18 @@ export async function saveDoctor(values, existingDoctor) {
   };
 
   const query = existingDoctor
-    ? supabase
-      .from(doctorsTable)
-      .update(payload)
-      .eq('id', existingDoctor.id)
-      .select()
-      .single()
-    : supabase
-      .from(doctorsTable)
-      .insert(payload)
-      .select()
-      .single();
+    ? supabase.from(doctorsTable).update(payload).eq('id', existingDoctor.id).select().single()
+    : supabase.from(doctorsTable).insert(payload).select().single();
 
-  const { data, error } = await query;
-
+  const {data, error} = await query;
   if (error) throw error;
   return data;
 }
 
-export async function setDoctorBookingStatus(
-  doctorId,
-  isAvailableForBooking
-) {
-  const { data, error } = await supabase
+export async function setDoctorBookingStatus(doctorId, isAvailableForBooking) {
+  const {data, error} = await supabase
     .from(doctorsTable)
-    .update({
-      is_available_for_booking: isAvailableForBooking,
-      updated_at: new Date().toISOString()
-    })
+    .update({is_available_for_booking: isAvailableForBooking, updated_at: new Date().toISOString()})
     .eq('id', doctorId)
     .select()
     .single();
@@ -78,19 +62,16 @@ export async function setDoctorBookingStatus(
 }
 
 export async function archiveDoctor(doctorId) {
-  const { error } = await supabase
+  const {error} = await supabase
     .from(doctorsTable)
-    .update({
-      is_archived: true,
-      updated_at: new Date().toISOString()
-    })
+    .update({is_archived: true, updated_at: new Date().toISOString()})
     .eq('id', doctorId);
 
   if (error) throw error;
 }
 
 export async function listVacations(doctorId) {
-  const { data, error } = await supabase
+  const {data, error} = await supabase
     .from(vacationsTable)
     .select('*')
     .eq('doctor_id', doctorId)
@@ -111,20 +92,10 @@ export async function saveVacation(values, doctorId, existingVacation) {
   };
 
   const query = existingVacation
-    ? supabase
-      .from(vacationsTable)
-      .update(payload)
-      .eq('id', existingVacation.id)
-      .select()
-      .single()
-    : supabase
-      .from(vacationsTable)
-      .insert(payload)
-      .select()
-      .single();
+    ? supabase.from(vacationsTable).update(payload).eq('id', existingVacation.id).select().single()
+    : supabase.from(vacationsTable).insert(payload).select().single();
 
-  const { data, error } = await query;
-
+  const {data, error} = await query;
   if (error) throw error;
   return data;
 }
@@ -137,22 +108,15 @@ export async function saveVacationDates(dates, doctorId, reason) {
     reason: reason.trim()
   }));
 
-  const { data, error } = await supabase
-    .from(vacationsTable)
-    .insert(rows)
-    .select();
-
+  const {data, error} = await supabase.from(vacationsTable).insert(rows).select();
   if (error) throw error;
   return data || [];
 }
 
 export async function archiveVacation(vacationId) {
-  const { error } = await supabase
+  const {error} = await supabase
     .from(vacationsTable)
-    .update({
-      is_active: false,
-      updated_at: new Date().toISOString()
-    })
+    .update({is_active: false, updated_at: new Date().toISOString()})
     .eq('id', vacationId);
 
   if (error) throw error;
@@ -161,19 +125,11 @@ export async function archiveVacation(vacationId) {
 export async function uploadDoctorPhoto(file, userId) {
   const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
   const path = `${userId}/${crypto.randomUUID()}.${extension}`;
-
-  const { error } = await supabase.storage
+  const {error} = await supabase.storage
     .from('doctor-photos')
-    .upload(path, file, {
-      cacheControl: '3600',
-      upsert: false
-    });
+    .upload(path, file, {cacheControl: '3600', upsert: false});
 
   if (error) throw error;
-
-  const { data } = supabase.storage
-    .from('doctor-photos')
-    .getPublicUrl(path);
-
+  const {data} = supabase.storage.from('doctor-photos').getPublicUrl(path);
   return data.publicUrl;
 }
