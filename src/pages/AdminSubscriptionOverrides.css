@@ -1,0 +1,19 @@
+.admin-account-actions {
+  display: grid;
+  gap: 7px;
+  min-width: 126px;
+}
+
+.admin-account-actions .admin-row-action {
+  width: 100%;
+  min-height: 34px;
+}
+
+.admin-account-actions .admin-row-action:first-child {
+  border-color: #a9dfe1;
+  background: #effbfb;
+}
+
+.admin-account-actions .admin-row-action svg {
+  width: 13px;
+}

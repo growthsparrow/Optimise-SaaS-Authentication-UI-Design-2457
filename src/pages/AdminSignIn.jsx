@@ -1,34 +1,34 @@
-import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React,{useState} from 'react';
+import {useLocation,useNavigate} from 'react-router-dom';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
-import supabase from '../supabase/supabase';
-import { isSuperAdmin } from '../services/adminService';
+import adminSupabase from '../supabase/adminSupabase';
+import {isSuperAdmin} from '../services/adminService';
 import './Admin.css';
 
-const { FiArrowRight, FiLock, FiShield } = FiIcons;
+const {FiArrowRight,FiLock,FiShield}=FiIcons;
 
 function AdminSignIn() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [values, setValues] = useState({
-    email: 'satish@growthsparrow.com',
-    password: ''
+  const navigate=useNavigate();
+  const location=useLocation();
+  const [values,setValues]=useState({
+    email:'satish@growthsparrow.com',
+    password:''
   });
-  const [notice, setNotice] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [notice,setNotice]=useState('');
+  const [saving,setSaving]=useState(false);
 
-  const update = (key, value) => {
-    setValues((current) => ({ ...current, [key]: value }));
+  const update=(key,value)=> {
+    setValues((current)=> ({...current,[key]:value}));
     setNotice('');
   };
 
-  const submit = async (event) => {
+  const submit=async (event)=> {
     event.preventDefault();
     setSaving(true);
     setNotice('');
 
-    const { error } = await supabase.auth.signInWithPassword(values);
+    const {error}=await adminSupabase.auth.signInWithPassword(values);
 
     if (error) {
       setNotice(error.message);
@@ -36,18 +36,25 @@ function AdminSignIn() {
       return;
     }
 
-    const allowed = await isSuperAdmin();
+    try {
+      const allowed=await isSuperAdmin();
 
-    if (!allowed) {
-      await supabase.auth.signOut();
-      setNotice('This account does not have super administrator access.');
+      if (!allowed) {
+        await adminSupabase.auth.signOut();
+        setNotice('This account does not have super administrator access.');
+        return;
+      }
+
+      navigate(
+        location.state?.from?.pathname || '/gsadmin/admin-dashboard',
+        {replace:true}
+      );
+    } catch (accessError) {
+      await adminSupabase.auth.signOut();
+      setNotice(accessError.message);
+    } finally {
       setSaving(false);
-      return;
     }
-
-    navigate(location.state?.from?.pathname || '/gsadmin/dashboard', {
-      replace: true
-    });
   };
 
   return (
@@ -57,9 +64,11 @@ function AdminSignIn() {
           <SafeIcon icon={FiShield} />
         </span>
         <span className="admin-kicker">Growth Sparrow control center</span>
-        <h1>Operate every Optimise workspace from one calm command center.</h1>
+        <h1>
+          Operate every Optimise workspace from one calm command center.
+        </h1>
         <p>
-          Review new accounts, control access, and publish subscription packages
+          Review new accounts,control access,and publish subscription packages
           without leaving your administrator workspace.
         </p>
       </section>
@@ -77,7 +86,7 @@ function AdminSignIn() {
             <input
               type="email"
               value={values.email}
-              onChange={(event) => update('email', event.target.value)}
+              onChange={(event)=> update('email',event.target.value)}
               autoComplete="email"
               required
             />
@@ -90,7 +99,7 @@ function AdminSignIn() {
               <input
                 type="password"
                 value={values.password}
-                onChange={(event) => update('password', event.target.value)}
+                onChange={(event)=> update('password',event.target.value)}
                 autoComplete="current-password"
                 required
               />

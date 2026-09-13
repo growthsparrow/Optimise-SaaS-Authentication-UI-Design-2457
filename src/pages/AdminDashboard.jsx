@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React,{useCallback,useEffect,useState} from 'react';
 import * as FiIcons from 'react-icons/fi';
-import SafeIcon from '../common/SafeIcon';
+import SafeIcon from '../components/SafeIcon';
 import AdminPackageForm from '../components/AdminPackageForm';
 import {
   listPackages,
@@ -19,23 +19,43 @@ const {
   FiPlus,
   FiShield,
   FiUsers
-} = FiIcons;
+}=FiIcons;
+
+const subscriptionLabels={
+  active:'Active',
+  trialing:'Trialing',
+  past_due:'Past due',
+  cancelled:'Cancelled',
+  expired:'Expired',
+  not_subscribed:'Not subscribed'
+};
+
+function formatDate(value) {
+  if (!value) {
+    return '—';
+  }
+
+  return new Date(value).toLocaleDateString('en-IN',{
+    day:'2-digit',
+    month:'short',
+    year:'numeric'
+  });
+}
 
 function AdminDashboard() {
-  const [users, setUsers] = useState([]);
-  const [packages, setPackages] = useState([]);
-  const [activeTab, setActiveTab] = useState('users');
-  const [editor, setEditor] = useState(null);
-  const [notice, setNotice] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [users,setUsers]=useState([]);
+  const [packages,setPackages]=useState([]);
+  const [activeTab,setActiveTab]=useState('users');
+  const [editor,setEditor]=useState(null);
+  const [notice,setNotice]=useState('');
+  const [loading,setLoading]=useState(true);
 
-  const loadData = useCallback(async () => {
+  const loadData=useCallback(async ()=> {
     try {
-      const [userRows, packageRows] = await Promise.all([
+      const [userRows,packageRows]=await Promise.all([
         listUsers(),
         listPackages()
       ]);
-
       setUsers(userRows);
       setPackages(packageRows);
     } catch (error) {
@@ -43,18 +63,22 @@ function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  },[]);
 
-  useEffect(() => {
+  useEffect(()=> {
     loadData();
-  }, [loadData]);
+  },[loadData]);
 
-  const toggleUser = async (user) => {
+  const toggleUser=async (user)=> {
     try {
-      const updated = await setUserEnabled(user.id, !user.is_enabled);
-      setUsers((current) =>
-        current.map((item) => (item.id === updated.id ? updated : item))
+      const updated=await setUserEnabled(user.id,!user.is_enabled);
+
+      setUsers((current)=>
+        current.map((item)=> item.id===updated.id
+          ? {...item,...updated}
+          : item)
       );
+
       setNotice(
         updated.is_enabled
           ? `${updated.email} has been enabled.`
@@ -65,15 +89,17 @@ function AdminDashboard() {
     }
   };
 
-  const togglePackage = async (packageItem) => {
+  const togglePackage=async (packageItem)=> {
     try {
-      const updated = await setPackagePublished(
+      const updated=await setPackagePublished(
         packageItem.id,
         !packageItem.is_published
       );
-      setPackages((current) =>
-        current.map((item) => (item.id === updated.id ? updated : item))
+
+      setPackages((current)=>
+        current.map((item)=> item.id===updated.id ? updated : item)
       );
+
       setNotice(
         updated.is_published
           ? `${updated.name} is now published.`
@@ -84,13 +110,14 @@ function AdminDashboard() {
     }
   };
 
-  const save = async (values, packageItem) => {
+  const save=async (values,packageItem)=> {
     try {
-      const saved = await savePackage(values, packageItem);
-      setPackages((current) =>
+      const saved=await savePackage(values,packageItem);
+
+      setPackages((current)=>
         packageItem
-          ? current.map((item) => (item.id === saved.id ? saved : item))
-          : [saved, ...current]
+          ? current.map((item)=> item.id===saved.id ? saved : item)
+          : [saved,...current]
       );
       setEditor(null);
       setNotice(packageItem ? 'Package updated.' : 'Package created.');
@@ -123,15 +150,15 @@ function AdminDashboard() {
 
         <nav className="admin-nav">
           <button
-            className={activeTab === 'users' ? 'is-active' : ''}
-            onClick={() => setActiveTab('users')}
+            className={activeTab==='users' ? 'is-active' : ''}
+            onClick={()=> setActiveTab('users')}
           >
             <SafeIcon icon={FiUsers} />
             Users
           </button>
           <button
-            className={activeTab === 'packages' ? 'is-active' : ''}
-            onClick={() => setActiveTab('packages')}
+            className={activeTab==='packages' ? 'is-active' : ''}
+            onClick={()=> setActiveTab('packages')}
           >
             <SafeIcon icon={FiPackage} />
             Packages
@@ -140,7 +167,7 @@ function AdminDashboard() {
 
         <button
           className="admin-signout"
-          onClick={async () => {
+          onClick={async ()=> {
             await signOutAdmin();
             window.location.assign('/gsadmin/');
           }}
@@ -154,18 +181,22 @@ function AdminDashboard() {
         <header className="admin-header">
           <div>
             <span className="admin-kicker">Growth Sparrow control center</span>
-            <h1>{activeTab === 'users' ? 'Workspace users' : 'Subscription packages'}</h1>
+            <h1>
+              {activeTab==='users'
+                ? 'Workspace users'
+                : 'Subscription packages'}
+            </h1>
             <p>
-              {activeTab === 'users'
-                ? 'Review new Optimise signups and control workspace access.'
+              {activeTab==='users'
+                ? 'A complete account directory with identity, contact, subscription, and access information.'
                 : 'Create, refine, and publish the plans available to customers.'}
             </p>
           </div>
 
-          {activeTab === 'packages' && (
+          {activeTab==='packages' && (
             <button
               className="admin-primary-button"
-              onClick={() => setEditor({ packageItem: null })}
+              onClick={()=> setEditor({packageItem:null})}
             >
               <SafeIcon icon={FiPlus} />
               Create package
@@ -175,39 +206,83 @@ function AdminDashboard() {
 
         {notice && <p className="admin-notice">{notice}</p>}
 
-        {activeTab === 'users' ? (
-          <section className="admin-table-card">
+        {activeTab==='users' ? (
+          <section className="admin-table-card admin-table-card--directory">
             <div className="admin-card-heading">
               <div>
-                <span className="admin-kicker">Account directory</span>
-                <h2>All signups</h2>
+                <span className="admin-kicker">Customer directory</span>
+                <h2>All customer accounts</h2>
+                <p className="admin-card-subtitle">
+                  Full account identity and subscription overview
+                </p>
               </div>
               <strong>{users.length}</strong>
             </div>
 
             {users.length ? (
               <div className="admin-table-wrap">
-                <table className="admin-table">
+                <table className="admin-table admin-table--accounts">
                   <thead>
                     <tr>
-                      <th>User</th>
-                      <th>Business</th>
-                      <th>Joined</th>
-                      <th>Status</th>
+                      <th>User ID</th>
+                      <th>Customer ID</th>
+                      <th>Customer</th>
+                      <th>Contact number</th>
+                      <th>Email ID</th>
+                      <th>Sign-up date</th>
+                      <th>Subscribed package</th>
+                      <th>Subscription status</th>
+                      <th>Subscription start</th>
+                      <th>Subscription end</th>
+                      <th>Next renewal</th>
+                      <th>Account status</th>
                       <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {users.map((user) => (
+                    {users.map((user)=> (
                       <tr key={user.id}>
                         <td>
-                          <strong>{user.full_name || 'Unnamed user'}</strong>
-                          <small>{user.email}</small>
+                          <span className="admin-id-cell" title={user.id}>
+                            {user.id || 'Not available'}
+                          </span>
                         </td>
-                        <td>{user.business_name || 'No business name'}</td>
                         <td>
-                          {new Date(user.created_at).toLocaleDateString()}
+                          <strong className="admin-customer-id">
+                            {user.customer_id || 'Not assigned'}
+                          </strong>
                         </td>
+                        <td>
+                          <strong>{user.full_name || 'Unnamed user'}</strong>
+                          <small>{user.business_name || 'No business name'}</small>
+                        </td>
+                        <td>{user.contact_number || 'Not provided'}</td>
+                        <td>
+                          <span className="admin-email-cell">
+                            {user.email || 'Not provided'}
+                          </span>
+                        </td>
+                        <td>{formatDate(user.created_at)}</td>
+                        <td>
+                          {user.subscription_package || 'Not subscribed'}
+                        </td>
+                        <td>
+                          <span
+                            className={
+                              user.subscription_status==='active' ||
+                              user.subscription_status==='trialing'
+                                ? 'admin-status admin-status--enabled'
+                                : 'admin-status admin-status--disabled'
+                            }
+                          >
+                            {subscriptionLabels[user.subscription_status] ||
+                              user.subscription_status ||
+                              'Not subscribed'}
+                          </span>
+                        </td>
+                        <td>{formatDate(user.subscription_start_date)}</td>
+                        <td>{formatDate(user.subscription_end_date)}</td>
+                        <td>{formatDate(user.next_renewal_date)}</td>
                         <td>
                           <span
                             className={
@@ -222,7 +297,7 @@ function AdminDashboard() {
                         <td>
                           <button
                             className="admin-row-action"
-                            onClick={() => toggleUser(user)}
+                            onClick={()=> toggleUser(user)}
                           >
                             {user.is_enabled ? 'Disable' : 'Enable'}
                           </button>
@@ -233,7 +308,9 @@ function AdminDashboard() {
                 </table>
               </div>
             ) : (
-              <div className="admin-empty">No signups have been recorded yet.</div>
+              <div className="admin-empty">
+                No customer accounts have been recorded yet.
+              </div>
             )}
           </section>
         ) : (
@@ -241,12 +318,12 @@ function AdminDashboard() {
             {editor && (
               <AdminPackageForm
                 packageItem={editor.packageItem}
-                onClose={() => setEditor(null)}
+                onClose={()=> setEditor(null)}
                 onSaved={save}
               />
             )}
 
-            {packages.map((packageItem) => (
+            {packages.map((packageItem)=> (
               <article className="admin-package-card" key={packageItem.id}>
                 <div className="admin-package-card__top">
                   <span
@@ -260,7 +337,7 @@ function AdminDashboard() {
                   </span>
                   <button
                     className="admin-icon-button"
-                    onClick={() => setEditor({ packageItem })}
+                    onClick={()=> setEditor({packageItem})}
                     aria-label={`Edit ${packageItem.name}`}
                   >
                     <SafeIcon icon={FiEdit2} />
@@ -275,14 +352,14 @@ function AdminDashboard() {
                 </strong>
 
                 <ul>
-                  {packageItem.features.map((feature) => (
+                  {packageItem.features.map((feature)=> (
                     <li key={feature}>{feature}</li>
                   ))}
                 </ul>
 
                 <button
                   className="admin-secondary-button"
-                  onClick={() => togglePackage(packageItem)}
+                  onClick={()=> togglePackage(packageItem)}
                 >
                   {packageItem.is_published ? 'Unpublish' : 'Publish'}
                 </button>
