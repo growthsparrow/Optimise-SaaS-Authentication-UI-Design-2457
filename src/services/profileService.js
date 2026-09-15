@@ -1,1 +1,47 @@
-import supabase from '../supabase/supabase';const requestsTable='profile_email_change_requests_1789304600000';const customerIdsTable='customer_ids_1789307150923';export async function getCustomerId(userId) {const {data,error}=await supabase.from(customerIdsTable).select('customer_id').eq('id',userId).single();if (error) throw error;return data.customer_id;}export async function updateProfile(values) {const {data,error}=await supabase.auth.updateUser({data:{name:values.name.trim(),business_name:values.businessName.trim(),contact_number:values.contactNumber.trim(),photo_url:values.photoUrl || '',social_facebook:values.socialLinks?.facebook?.trim() || '',social_instagram:values.socialLinks?.instagram?.trim() || '',social_twitter:values.socialLinks?.twitter?.trim() || '',social_linkedin:values.socialLinks?.linkedin?.trim() || ''}});if (error) throw error;return data.user;}export async function updatePassword(password) {const {error}=await supabase.auth.updateUser({password});if (error) throw error;}export async function uploadProfilePhoto(file,userId) {const extension=file.name.split('.').pop()?.toLowerCase() || 'jpg';const path=`${userId}/${crypto.randomUUID()}.${extension}`;const {error}=await supabase.storage.from('profile-photos').upload(path,file,{cacheControl:'3600',upsert:false});if (error) throw error;const {data}=supabase.storage.from('profile-photos').getPublicUrl(path);return data.publicUrl;}export async function requestEmailChange(values,currentEmail) {const {data,error}=await supabase.from(requestsTable).insert({current_email:currentEmail,requested_email:values.requestedEmail.trim().toLowerCase(),message:values.message.trim()}).select().single();if (error) throw error;return data;}
+import supabase from '../supabase/supabase';
+
+const requestsTable = 'profile_email_change_requests_1789304600000';
+const customerIdsTable = 'customer_ids_1789307150923';
+
+export async function getCustomerId(userId) {
+  const { data, error } = await supabase.from(customerIdsTable).select('customer_id').eq('id', userId).single();
+  if (error) throw error;
+  return data.customer_id;
+}
+
+export async function updateProfile(values) {
+  const { data, error } = await supabase.auth.updateUser({
+    data: {
+      name: values.name.trim(),
+      business_name: values.businessName.trim(),
+      contact_number: values.contactNumber.trim(),
+      photo_url: values.photoUrl || ''
+    }
+  });
+  if (error) throw error;
+  return data.user;
+}
+
+export async function updatePassword(password) {
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) throw error;
+}
+
+export async function uploadProfilePhoto(file, userId) {
+  const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+  const path = `${userId}/${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage.from('profile-photos').upload(path, file, { cacheControl: '3600', upsert: false });
+  if (error) throw error;
+  const { data } = supabase.storage.from('profile-photos').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+export async function requestEmailChange(values, currentEmail) {
+  const { data, error } = await supabase.from(requestsTable).insert({
+    current_email: currentEmail,
+    requested_email: values.requestedEmail.trim().toLowerCase(),
+    message: values.message.trim()
+  }).select().single();
+  if (error) throw error;
+  return data;
+}

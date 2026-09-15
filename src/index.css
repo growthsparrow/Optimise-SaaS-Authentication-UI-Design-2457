@@ -1,3 +1,6 @@
+@import './components/BookingPhotoUpload.css';
+@import './components/BookingTypeModalAnimation.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

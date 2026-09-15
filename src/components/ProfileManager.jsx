@@ -1,1 +1,156 @@
-import React,{useEffect,useState} from 'react';import * as FiIcons from 'react-icons/fi';import SafeIcon from '../common/SafeIcon';import supabase from '../supabase/supabase';import {requestEmailChange,updatePassword,updateProfile,uploadProfilePhoto} from '../services/profileService';import './ProfileManager.css';const {FiCamera,FiCheckCircle,FiGlobe,FiInstagram,FiLinkedin,FiLock,FiMail,FiSave,FiUser}=FiIcons;const emptySocialLinks={facebook:'',instagram:'',twitter:'',linkedin:''};function ProfileManager() {const [user,setUser]=useState(null);const [values,setValues]=useState({name:'',businessName:'',contactNumber:'',photoUrl:'',socialLinks: emptySocialLinks});const [passwords,setPasswords]=useState({password:'',confirmPassword:''});const [emailRequest,setEmailRequest]=useState({requestedEmail:'',message:''});const [notice,setNotice]=useState('');const [error,setError]=useState('');const [actionMessages,setActionMessages]=useState({profile:'',photo:'',password:'',email:''});const [saving,setSaving]=useState(false);useEffect(()=> {supabase.auth.getUser().then(({data})=> {const currentUser=data.user;const metadata=currentUser?.user_metadata || {};setUser(currentUser);setValues({name:metadata.name || '',businessName:metadata.business_name || '',contactNumber:metadata.contact_number || '',photoUrl:metadata.photo_url || '',socialLinks:{facebook:metadata.social_facebook || '',instagram:metadata.social_instagram || '',twitter:metadata.social_twitter || '',linkedin:metadata.social_linkedin || ''}});});},[]);const updateValue=(key,value)=> {setValues((current)=> ({...current,[key]:value}));};const updateSocialLink=(key,value)=> {setValues((current)=> ({...current,socialLinks:{...current.socialLinks,[key]:value}}));};const showActionMessage=(key,message)=> {setActionMessages((current)=> ({...current,[key]:message}));};const handleProfileSave=async (event)=> {event.preventDefault();setSaving(true);setNotice('');setError('');showActionMessage('profile','');try {const updated=await updateProfile(values);setUser(updated);window.dispatchEvent(new CustomEvent('profile-updated',{detail:{name:values.name.trim(),business_name:values.businessName.trim()}}));showActionMessage('profile','Profile and social links saved successfully.');} catch (saveError) {setError(saveError.message);} finally {setSaving(false);}};const handlePhoto=async (event)=> {const file=event.target.files?.[0];if (!file) return;if (!file.type.startsWith('image/')) {setError('Please choose an image file.');return;} setSaving(true);setNotice('');setError('');showActionMessage('photo','');try {const photoUrl=await uploadProfilePhoto(file,user.id);const updated=await updateProfile({...values,photoUrl});setValues((current)=> ({...current,photoUrl}));setUser(updated);showActionMessage('photo','Profile photo updated successfully.');} catch (photoError) {setError(photoError.message);} finally {setSaving(false);}};const handlePasswordSave=async (event)=> {event.preventDefault();setNotice('');setError('');showActionMessage('password','');if (passwords.password.length < 8) {setError('Password must contain at least 8 characters.');return;} if (passwords.password !==passwords.confirmPassword) {setError('Passwords do not match.');return;} try {await updatePassword(passwords.password);setPasswords({password:'',confirmPassword:''});showActionMessage('password','Password updated successfully.');} catch (passwordError) {setError(passwordError.message);}};const handleEmailRequest=async (event)=> {event.preventDefault();setNotice('');setError('');showActionMessage('email','');try {await requestEmailChange(emailRequest,user.email);setEmailRequest({requestedEmail:'',message:''});showActionMessage('email','Email change request submitted successfully.');} catch (requestError) {setError(requestError.message);}};return ( <section className="profile-manager"> <div className="profile-toolbar"><div><span className="dashboard-eyebrow">Workspace settings</span><h2>Profile management</h2><p>Update your identity,workspace details and social media links.</p></div></div>{(notice || error) && <div className={error ? 'profile-notice profile-notice--error' : 'profile-notice'}>{error || notice}</div>}<form className="profile-card profile-card--identity" onSubmit={handleProfileSave}><div className="profile-card__heading"><div className="profile-heading-icon"><SafeIcon icon={FiUser}/></div><div><h3>Profile details</h3><p>These details identify your workspace.</p></div></div><div className="profile-photo-row"><div className="profile-avatar">{values.photoUrl ? <img src={values.photoUrl} alt="" /> : <SafeIcon icon={FiUser}/>}</div><div className="profile-photo-actions"><label className="profile-photo-button"><SafeIcon icon={FiCamera}/> Change photo <input type="file" accept="image/*" onChange={handlePhoto}/></label>{actionMessages.photo && <ConfirmationMessage message={actionMessages.photo}/>}</div></div><div className="profile-grid"><label className="profile-field"><span>Name</span><input value={values.name} onChange={(event)=> updateValue('name',event.target.value)} required /></label><label className="profile-field"><span>Business name</span><input value={values.businessName} onChange={(event)=> updateValue('businessName',event.target.value)} required /></label><label className="profile-field"><span>Contact number</span><input value={values.contactNumber} onChange={(event)=> updateValue('contactNumber',event.target.value.replace(/\D/g,'').slice(0,10))} inputMode="numeric" maxLength="10" /></label><label className="profile-field"><span>Registration email</span><span className="profile-readonly"><SafeIcon icon={FiMail}/>{user?.email || 'Loading email'}</span><small>Email cannot be edited here.</small></label></div><SocialLinks values={values.socialLinks} onChange={updateSocialLink}/><div className="profile-card__footer"><div><button className="dashboard-primary" disabled={saving}><SafeIcon icon={saving ? FiSave : FiCheckCircle}/>{saving ? 'Saving…' : 'Save profile'}</button>{actionMessages.profile && <ConfirmationMessage message={actionMessages.profile}/>}</div></div></form><form className="profile-card" onSubmit={handlePasswordSave}><div className="profile-card__heading"><div className="profile-heading-icon"><SafeIcon icon={FiLock}/></div><div><h3>Change password</h3><p>Use a strong password with at least 8 characters.</p></div></div><div className="profile-grid"><label className="profile-field"><span>New password</span><input type="password" value={passwords.password} onChange={(event)=> setPasswords({...passwords,password:event.target.value})} minLength="8" required /></label><label className="profile-field"><span>Confirm new password</span><input type="password" value={passwords.confirmPassword} onChange={(event)=> setPasswords({...passwords,confirmPassword:event.target.value})} minLength="8" required /></label></div><div className="profile-card__footer"><div><button className="dashboard-primary"><SafeIcon icon={FiLock}/>Update password</button>{actionMessages.password && <ConfirmationMessage message={actionMessages.password}/>}</div></div></form><form className="profile-card" onSubmit={handleEmailRequest}><div className="profile-card__heading"><div className="profile-heading-icon"><SafeIcon icon={FiMail}/></div><div><h3>Request email change</h3><p>Your registration email stays locked for account security.</p></div></div><div className="profile-grid"><label className="profile-field"><span>Requested email</span><input type="email" value={emailRequest.requestedEmail} onChange={(event)=> setEmailRequest({...emailRequest,requestedEmail:event.target.value})} required /></label><label className="profile-field"><span>Reason or note</span><input value={emailRequest.message} onChange={(event)=> setEmailRequest({...emailRequest,message:event.target.value})} placeholder="Optional" /></label></div><div className="profile-card__footer"><div><button className="dashboard-primary"><SafeIcon icon={FiMail}/>Submit request</button>{actionMessages.email && <ConfirmationMessage message={actionMessages.email}/>}</div></div></form></section> );}function SocialLinks({values,onChange}) {const fields=[{key:'facebook',label:'Facebook',icon:FiGlobe,placeholder:'https://facebook.com/your-page'},{key:'instagram',label:'Instagram',icon:FiInstagram,placeholder:'https://instagram.com/your-profile'},{key:'twitter',label:'Twitter / X',icon:FiGlobe,placeholder:'https://x.com/your-profile'},{key:'linkedin',label:'LinkedIn',icon:FiLinkedin,placeholder:'https://linkedin.com/company/your-company'}];return <section className="profile-social-section"><div className="profile-section-heading"><div className="profile-heading-icon"><SafeIcon icon={FiGlobe}/></div><div><h3>Social media links</h3><p>Add public links that represent your business.</p></div></div><div className="profile-grid">{fields.map((field)=> <label className="profile-field" key={field.key}><span>{field.label}</span><span className="profile-input-with-icon"><SafeIcon icon={field.icon}/><input type="url" value={values[field.key]} onChange={(event)=> onChange(field.key,event.target.value)} placeholder={field.placeholder}/></span></label>)}</div></section>;}function ConfirmationMessage({message}) {return <p className="profile-confirmation" role="status"><SafeIcon icon={FiCheckCircle}/>{message}</p>;}export default ProfileManager;
+import React, { useEffect, useState } from 'react';
+import * as FiIcons from 'react-icons/fi';
+import SafeIcon from '../common/SafeIcon';
+import supabase from '../supabase/supabase';
+import { requestEmailChange, updatePassword, updateProfile, uploadProfilePhoto } from '../services/profileService';
+import './ProfileManager.css';
+
+const { FiCamera, FiCheckCircle, FiLock, FiMail, FiSave, FiUser } = FiIcons;
+
+function ProfileManager() {
+  const [user, setUser] = useState(null);
+  const [values, setValues] = useState({ name: '', businessName: '', contactNumber: '', photoUrl: '' });
+  const [passwords, setPasswords] = useState({ password: '', confirmPassword: '' });
+  const [emailRequest, setEmailRequest] = useState({ requestedEmail: '', message: '' });
+  const [error, setError] = useState('');
+  const [actionMessages, setActionMessages] = useState({ profile: '', photo: '', password: '', email: '' });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const currentUser = data.user;
+      const metadata = currentUser?.user_metadata || {};
+      setUser(currentUser);
+      setValues({
+        name: metadata.name || '',
+        businessName: metadata.business_name || '',
+        contactNumber: metadata.contact_number || '',
+        photoUrl: metadata.photo_url || ''
+      });
+    });
+  }, []);
+
+  const updateValue = (key, value) => setValues((current) => ({ ...current, [key]: value }));
+  const showActionMessage = (key, message) => setActionMessages((current) => ({ ...current, [key]: message }));
+
+  const handleProfileSave = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    setError('');
+    showActionMessage('profile', '');
+
+    try {
+      const updated = await updateProfile(values);
+      setUser(updated);
+      window.dispatchEvent(new CustomEvent('profile-updated', {
+        detail: { name: values.name.trim(), business_name: values.businessName.trim() }
+      }));
+      showActionMessage('profile', 'Profile details saved successfully.');
+    } catch (saveError) {
+      setError(saveError.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePhoto = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError('Please choose an image file.');
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    showActionMessage('photo', '');
+
+    try {
+      const photoUrl = await uploadProfilePhoto(file, user.id);
+      const updated = await updateProfile({ ...values, photoUrl });
+      setValues((current) => ({ ...current, photoUrl }));
+      setUser(updated);
+      showActionMessage('photo', 'Profile photo updated successfully.');
+    } catch (photoError) {
+      setError(photoError.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePasswordSave = async (event) => {
+    event.preventDefault();
+    setError('');
+    showActionMessage('password', '');
+
+    if (passwords.password.length < 8) {
+      setError('Password must contain at least 8 characters.');
+      return;
+    }
+    if (passwords.password !== passwords.confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    try {
+      await updatePassword(passwords.password);
+      setPasswords({ password: '', confirmPassword: '' });
+      showActionMessage('password', 'Password updated successfully.');
+    } catch (passwordError) {
+      setError(passwordError.message);
+    }
+  };
+
+  const handleEmailRequest = async (event) => {
+    event.preventDefault();
+    setError('');
+    showActionMessage('email', '');
+
+    try {
+      await requestEmailChange(emailRequest, user.email);
+      setEmailRequest({ requestedEmail: '', message: '' });
+      showActionMessage('email', 'Email change request submitted successfully.');
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  };
+
+  return (
+    <section className="profile-manager">
+      <div className="profile-toolbar">
+        <div><span className="dashboard-eyebrow">Workspace settings</span><h2>Profile management</h2><p>Update your identity and account security.</p></div>
+      </div>
+      {error && <div className="profile-notice profile-notice--error">{error}</div>}
+
+      <form className="profile-card profile-card--identity" onSubmit={handleProfileSave}>
+        <div className="profile-card__heading"><div className="profile-heading-icon"><SafeIcon icon={FiUser} /></div><div><h3>Profile details</h3><p>These details identify your workspace.</p></div></div>
+        <div className="profile-photo-row"><div className="profile-avatar">{values.photoUrl ? <img src={values.photoUrl} alt="" /> : <SafeIcon icon={FiUser} />}</div><div className="profile-photo-actions"><label className="profile-photo-button"><SafeIcon icon={FiCamera} /> Change photo <input type="file" accept="image/*" onChange={handlePhoto} /></label>{actionMessages.photo && <ConfirmationMessage message={actionMessages.photo} />}</div></div>
+        <div className="profile-grid">
+          <label className="profile-field"><span>Name</span><input value={values.name} onChange={(event) => updateValue('name', event.target.value)} required /></label>
+          <label className="profile-field"><span>Business name</span><input value={values.businessName} onChange={(event) => updateValue('businessName', event.target.value)} required /></label>
+          <label className="profile-field"><span>Contact number</span><input value={values.contactNumber} onChange={(event) => updateValue('contactNumber', event.target.value.replace(/\D/g, '').slice(0, 10))} inputMode="numeric" maxLength="10" /></label>
+          <label className="profile-field"><span>Registration email</span><span className="profile-readonly"><SafeIcon icon={FiMail} />{user?.email || 'Loading email'}</span><small>Email cannot be edited here.</small></label>
+        </div>
+        <div className="profile-card__footer"><div><button className="dashboard-primary" disabled={saving}><SafeIcon icon={saving ? FiSave : FiCheckCircle} />{saving ? 'Saving…' : 'Save profile'}</button>{actionMessages.profile && <ConfirmationMessage message={actionMessages.profile} />}</div></div>
+      </form>
+
+      <form className="profile-card" onSubmit={handlePasswordSave}>
+        <div className="profile-card__heading"><div className="profile-heading-icon"><SafeIcon icon={FiLock} /></div><div><h3>Change password</h3><p>Use a strong password with at least 8 characters.</p></div></div>
+        <div className="profile-grid"><label className="profile-field"><span>New password</span><input type="password" value={passwords.password} onChange={(event) => setPasswords({ ...passwords, password: event.target.value })} minLength="8" required /></label><label className="profile-field"><span>Confirm password</span><input type="password" value={passwords.confirmPassword} onChange={(event) => setPasswords({ ...passwords, confirmPassword: event.target.value })} minLength="8" required /></label></div>
+        <div className="profile-card__footer"><div><button className="dashboard-primary"><SafeIcon icon={FiLock} />Update password</button>{actionMessages.password && <ConfirmationMessage message={actionMessages.password} />}</div></div>
+      </form>
+
+      <form className="profile-card" onSubmit={handleEmailRequest}>
+        <div className="profile-card__heading"><div className="profile-heading-icon"><SafeIcon icon={FiMail} /></div><div><h3>Request email change</h3><p>Your registration email stays locked for account security.</p></div></div>
+        <div className="profile-grid"><label className="profile-field"><span>Requested email</span><input type="email" value={emailRequest.requestedEmail} onChange={(event) => setEmailRequest({ ...emailRequest, requestedEmail: event.target.value })} required /></label><label className="profile-field"><span>Reason or note</span><input value={emailRequest.message} onChange={(event) => setEmailRequest({ ...emailRequest, message: event.target.value })} placeholder="Optional" /></label></div>
+        <div className="profile-card__footer"><div><button className="dashboard-primary"><SafeIcon icon={FiMail} />Submit request</button>{actionMessages.email && <ConfirmationMessage message={actionMessages.email} />}</div></div>
+      </form>
+    </section>
+  );
+}
+
+function ConfirmationMessage({ message }) {
+  return <p className="profile-confirmation" role="status"><SafeIcon icon={FiCheckCircle} />{message}</p>;
+}
+
+export default ProfileManager;

@@ -1,0 +1,187 @@
+import supabase from '../supabase/supabase';
+
+const businessPagesTable = 'business_pages_1789493000000';
+const assetsBucket = 'business-page-assets';
+
+function slugify(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'your-business';
+}
+
+function normalizeSlug(value) {
+  try {
+    return decodeURIComponent(String(value || '')).trim().toLowerCase();
+  } catch {
+    return String(value || '').trim().toLowerCase();
+  }
+}
+
+function splitLines(value) {
+  return String(value || '')
+    .split('\n')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+export async function getMyBusinessPage() {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+
+  if (userError) throw userError;
+  if (!userData.user) {
+    throw new Error('Your session has expired. Please sign in again.');
+  }
+
+  const { data, error } = await supabase
+    .from(businessPagesTable)
+    .select('*')
+    .eq('user_id', userData.user.id)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  const metadata = userData.user.user_metadata || {};
+
+  return {
+    user: userData.user,
+    page: data,
+    registrationCategory: metadata.business_domain || ''
+  };
+}
+
+export async function getPublicBusinessPage(slug) {
+  const normalizedSlug = normalizeSlug(slug);
+
+  if (!normalizedSlug) {
+    throw new Error('This business page link is missing a business identifier.');
+  }
+
+  const { data, error } = await supabase
+    .from(businessPagesTable)
+    .select('*')
+    .eq('business_slug', normalizedSlug)
+    .eq('is_published', true)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Unable to load this public business page: ${error.message}`);
+  }
+
+  if (!data) {
+    throw new Error(
+      'This business page is not published yet, or the public link is incorrect.'
+    );
+  }
+
+  return data;
+}
+
+async function uploadAsset(file, userId) {
+  const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+  const path = `${userId}/${crypto.randomUUID()}.${extension}`;
+
+  const { error } = await supabase.storage
+    .from(assetsBucket)
+    .upload(path, file, {
+      cacheControl: '3600',
+      upsert: false
+    });
+
+  if (error) throw error;
+
+  const { data } = supabase.storage
+    .from(assetsBucket)
+    .getPublicUrl(path);
+
+  return data.publicUrl;
+}
+
+export async function saveBusinessPage(values, existingPage) {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+
+  if (userError) throw userError;
+  if (!userData.user) {
+    throw new Error('Your session has expired. Please sign in again.');
+  }
+
+  const files = values.imageFiles || [];
+  const uploadedImages = files.length
+    ? await Promise.all(
+        files.slice(0, 5).map((file) => uploadAsset(file, userData.user.id))
+      )
+    : values.businessImages || existingPage?.business_images || [];
+
+  const logoUrl = values.logoFile
+    ? await uploadAsset(values.logoFile, userData.user.id)
+    : values.logoUrl || existingPage?.logo_url || '';
+
+  const payload = {
+    user_id: userData.user.id,
+    business_name: values.businessName.trim(),
+    business_slug: slugify(values.businessSlug || values.businessName),
+    business_category: values.businessCategory.trim(),
+    logo_url: logoUrl,
+    business_expertise: values.businessExpertise.trim(),
+    services_offered: values.servicesOffered.trim(),
+    products: values.products.trim(),
+    business_images: uploadedImages.slice(0, 5),
+    years_of_experience: Number(values.yearsOfExperience || 0),
+    primary_contact_number: values.primaryContactNumber.trim(),
+    email_id: values.emailId.trim().toLowerCase(),
+    social_facebook: values.socialFacebook.trim(),
+    social_instagram: values.socialInstagram.trim(),
+    social_x: values.socialX.trim(),
+    social_linkedin: values.socialLinkedin.trim(),
+    is_published: values.isPublished !== false,
+    updated_at: new Date().toISOString()
+  };
+
+  const query = existingPage
+    ? supabase
+        .from(businessPagesTable)
+        .update(payload)
+        .eq('id', existingPage.id)
+        .select()
+        .single()
+    : supabase
+        .from(businessPagesTable)
+        .insert(payload)
+        .select()
+        .single();
+
+  const { data, error } = await query;
+
+  if (error) throw error;
+
+  return data;
+}
+
+export function businessPageFormValues(page, registrationCategory, user) {
+  return {
+    businessName: page?.business_name || user?.user_metadata?.business_name || '',
+    businessSlug: page?.business_slug || '',
+    businessCategory: page?.business_category || registrationCategory || '',
+    logoUrl: page?.logo_url || user?.user_metadata?.photo_url || '',
+    logoFile: null,
+    businessExpertise: page?.business_expertise || '',
+    servicesOffered: page?.services_offered || '',
+    products: page?.products || '',
+    businessImages: page?.business_images || [],
+    imageFiles: [],
+    yearsOfExperience: page?.years_of_experience || 0,
+    primaryContactNumber:
+      page?.primary_contact_number ||
+      user?.user_metadata?.contact_number ||
+      '',
+    emailId: page?.email_id || user?.email || '',
+    socialFacebook: page?.social_facebook || '',
+    socialInstagram: page?.social_instagram || '',
+    socialX: page?.social_x || '',
+    socialLinkedin: page?.social_linkedin || '',
+    isPublished: page?.is_published !== false
+  };
+}
+
+export { splitLines, slugify, normalizeSlug };
