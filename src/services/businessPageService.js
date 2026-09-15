@@ -26,21 +26,40 @@ function splitLines(value) {
     .filter(Boolean);
 }
 
-export async function getMyBusinessPage() {
-  const { data: userData, error: userError } = await supabase.auth.getUser();
+function normalizeTestimonials(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
 
-  if (userError) throw userError;
+  return value
+    .filter((item) => item?.name && item?.quote)
+    .map((item) => ({
+      name: String(item.name).trim(),
+      role: String(item.role || '').trim(),
+      quote: String(item.quote).trim()
+    }));
+}
+
+export async function getMyBusinessPage() {
+  const {data: userData, error: userError} = await supabase.auth.getUser();
+
+  if (userError) {
+    throw userError;
+  }
+
   if (!userData.user) {
     throw new Error('Your session has expired. Please sign in again.');
   }
 
-  const { data, error } = await supabase
+  const {data, error} = await supabase
     .from(businessPagesTable)
     .select('*')
     .eq('user_id', userData.user.id)
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
 
   const metadata = userData.user.user_metadata || {};
 
@@ -58,7 +77,7 @@ export async function getPublicBusinessPage(slug) {
     throw new Error('This business page link is missing a business identifier.');
   }
 
-  const { data, error } = await supabase
+  const {data, error} = await supabase
     .from(businessPagesTable)
     .select('*')
     .eq('business_slug', normalizedSlug)
@@ -81,37 +100,43 @@ export async function getPublicBusinessPage(slug) {
 async function uploadAsset(file, userId) {
   const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
   const path = `${userId}/${crypto.randomUUID()}.${extension}`;
-
-  const { error } = await supabase.storage
+  const {error} = await supabase.storage
     .from(assetsBucket)
-    .upload(path, file, {
-      cacheControl: '3600',
-      upsert: false
-    });
+    .upload(path, file, {cacheControl: '3600', upsert: false});
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
 
-  const { data } = supabase.storage
-    .from(assetsBucket)
-    .getPublicUrl(path);
-
+  const {data} = supabase.storage.from(assetsBucket).getPublicUrl(path);
   return data.publicUrl;
 }
 
 export async function saveBusinessPage(values, existingPage) {
-  const { data: userData, error: userError } = await supabase.auth.getUser();
+  const {data: userData, error: userError} = await supabase.auth.getUser();
 
-  if (userError) throw userError;
+  if (userError) {
+    throw userError;
+  }
+
   if (!userData.user) {
     throw new Error('Your session has expired. Please sign in again.');
   }
 
   const files = values.imageFiles || [];
+  const logoFiles = values.clientLogoFiles || [];
+
   const uploadedImages = files.length
     ? await Promise.all(
         files.slice(0, 5).map((file) => uploadAsset(file, userData.user.id))
       )
     : values.businessImages || existingPage?.business_images || [];
+
+  const uploadedClientLogos = logoFiles.length
+    ? await Promise.all(
+        logoFiles.slice(0, 8).map((file) => uploadAsset(file, userData.user.id))
+      )
+    : values.clientLogos || existingPage?.client_logos || [];
 
   const logoUrl = values.logoFile
     ? await uploadAsset(values.logoFile, userData.user.id)
@@ -124,8 +149,12 @@ export async function saveBusinessPage(values, existingPage) {
     business_category: values.businessCategory.trim(),
     logo_url: logoUrl,
     business_expertise: values.businessExpertise.trim(),
+    about_us: values.aboutUs.trim(),
     services_offered: values.servicesOffered.trim(),
     products: values.products.trim(),
+    cater_to: values.caterTo.trim(),
+    client_testimonials: normalizeTestimonials(values.clientTestimonials),
+    client_logos: uploadedClientLogos.slice(0, 8),
     business_images: uploadedImages.slice(0, 5),
     years_of_experience: Number(values.yearsOfExperience || 0),
     primary_contact_number: values.primaryContactNumber.trim(),
@@ -134,7 +163,7 @@ export async function saveBusinessPage(values, existingPage) {
     social_instagram: values.socialInstagram.trim(),
     social_x: values.socialX.trim(),
     social_linkedin: values.socialLinkedin.trim(),
-    is_published: values.isPublished !== false,
+    is_published: true,
     updated_at: new Date().toISOString()
   };
 
@@ -151,9 +180,11 @@ export async function saveBusinessPage(values, existingPage) {
         .select()
         .single();
 
-  const { data, error } = await query;
+  const {data, error} = await query;
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
 
   return data;
 }
@@ -166,22 +197,25 @@ export function businessPageFormValues(page, registrationCategory, user) {
     logoUrl: page?.logo_url || user?.user_metadata?.photo_url || '',
     logoFile: null,
     businessExpertise: page?.business_expertise || '',
+    aboutUs: page?.about_us || '',
     servicesOffered: page?.services_offered || '',
     products: page?.products || '',
+    caterTo: page?.cater_to || '',
+    clientTestimonials: normalizeTestimonials(page?.client_testimonials),
+    clientLogos: page?.client_logos || [],
+    clientLogoFiles: [],
     businessImages: page?.business_images || [],
     imageFiles: [],
     yearsOfExperience: page?.years_of_experience || 0,
     primaryContactNumber:
-      page?.primary_contact_number ||
-      user?.user_metadata?.contact_number ||
-      '',
+      page?.primary_contact_number || user?.user_metadata?.contact_number || '',
     emailId: page?.email_id || user?.email || '',
     socialFacebook: page?.social_facebook || '',
     socialInstagram: page?.social_instagram || '',
     socialX: page?.social_x || '',
     socialLinkedin: page?.social_linkedin || '',
-    isPublished: page?.is_published !== false
+    isPublished: true
   };
 }
 
-export { splitLines, slugify, normalizeSlug };
+export {splitLines, slugify, normalizeSlug};
