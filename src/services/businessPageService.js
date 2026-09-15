@@ -100,15 +100,22 @@ export async function getPublicBusinessPage(slug) {
 async function uploadAsset(file, userId) {
   const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
   const path = `${userId}/${crypto.randomUUID()}.${extension}`;
+
   const {error} = await supabase.storage
     .from(assetsBucket)
-    .upload(path, file, {cacheControl: '3600', upsert: false});
+    .upload(path, file, {
+      cacheControl: '3600',
+      upsert: false
+    });
 
   if (error) {
     throw error;
   }
 
-  const {data} = supabase.storage.from(assetsBucket).getPublicUrl(path);
+  const {data} = supabase.storage
+    .from(assetsBucket)
+    .getPublicUrl(path);
+
   return data.publicUrl;
 }
 
@@ -128,13 +135,17 @@ export async function saveBusinessPage(values, existingPage) {
 
   const uploadedImages = files.length
     ? await Promise.all(
-        files.slice(0, 5).map((file) => uploadAsset(file, userData.user.id))
+        files
+          .slice(0, 5)
+          .map((file) => uploadAsset(file, userData.user.id))
       )
     : values.businessImages || existingPage?.business_images || [];
 
   const uploadedClientLogos = logoFiles.length
     ? await Promise.all(
-        logoFiles.slice(0, 8).map((file) => uploadAsset(file, userData.user.id))
+        logoFiles
+          .slice(0, 8)
+          .map((file) => uploadAsset(file, userData.user.id))
       )
     : values.clientLogos || existingPage?.client_logos || [];
 
@@ -167,20 +178,13 @@ export async function saveBusinessPage(values, existingPage) {
     updated_at: new Date().toISOString()
   };
 
-  const query = existingPage
-    ? supabase
-        .from(businessPagesTable)
-        .update(payload)
-        .eq('id', existingPage.id)
-        .select()
-        .single()
-    : supabase
-        .from(businessPagesTable)
-        .insert(payload)
-        .select()
-        .single();
-
-  const {data, error} = await query;
+  const {data, error} = await supabase
+    .from(businessPagesTable)
+    .upsert(payload, {
+      onConflict: 'user_id'
+    })
+    .select()
+    .single();
 
   if (error) {
     throw error;
@@ -191,25 +195,41 @@ export async function saveBusinessPage(values, existingPage) {
 
 export function businessPageFormValues(page, registrationCategory, user) {
   return {
-    businessName: page?.business_name || user?.user_metadata?.business_name || '',
+    businessName:
+      page?.business_name ||
+      user?.user_metadata?.business_name ||
+      '',
     businessSlug: page?.business_slug || '',
-    businessCategory: page?.business_category || registrationCategory || '',
-    logoUrl: page?.logo_url || user?.user_metadata?.photo_url || '',
+    businessCategory:
+      page?.business_category ||
+      registrationCategory ||
+      '',
+    logoUrl:
+      page?.logo_url ||
+      user?.user_metadata?.photo_url ||
+      '',
     logoFile: null,
     businessExpertise: page?.business_expertise || '',
     aboutUs: page?.about_us || '',
     servicesOffered: page?.services_offered || '',
     products: page?.products || '',
     caterTo: page?.cater_to || '',
-    clientTestimonials: normalizeTestimonials(page?.client_testimonials),
+    clientTestimonials: normalizeTestimonials(
+      page?.client_testimonials
+    ),
     clientLogos: page?.client_logos || [],
     clientLogoFiles: [],
     businessImages: page?.business_images || [],
     imageFiles: [],
     yearsOfExperience: page?.years_of_experience || 0,
     primaryContactNumber:
-      page?.primary_contact_number || user?.user_metadata?.contact_number || '',
-    emailId: page?.email_id || user?.email || '',
+      page?.primary_contact_number ||
+      user?.user_metadata?.contact_number ||
+      '',
+    emailId:
+      page?.email_id ||
+      user?.email ||
+      '',
     socialFacebook: page?.social_facebook || '',
     socialInstagram: page?.social_instagram || '',
     socialX: page?.social_x || '',
@@ -218,4 +238,8 @@ export function businessPageFormValues(page, registrationCategory, user) {
   };
 }
 
-export {splitLines, slugify, normalizeSlug};
+export {
+  splitLines,
+  slugify,
+  normalizeSlug
+};
