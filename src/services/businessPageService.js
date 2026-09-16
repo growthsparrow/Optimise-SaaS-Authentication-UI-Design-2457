@@ -61,12 +61,10 @@ export async function getMyBusinessPage() {
     throw error;
   }
 
-  const metadata = userData.user.user_metadata || {};
-
   return {
     user: userData.user,
     page: data,
-    registrationCategory: metadata.business_domain || ''
+    registrationCategory: userData.user.user_metadata?.business_domain || ''
   };
 }
 
@@ -130,12 +128,12 @@ export async function saveBusinessPage(values, existingPage) {
     throw new Error('Your session has expired. Please sign in again.');
   }
 
-  const files = values.imageFiles || [];
+  const imageFiles = values.imageFiles || [];
   const logoFiles = values.clientLogoFiles || [];
 
-  const uploadedImages = files.length
+  const uploadedImages = imageFiles.length
     ? await Promise.all(
-        files
+        imageFiles
           .slice(0, 5)
           .map((file) => uploadAsset(file, userData.user.id))
       )
@@ -158,6 +156,10 @@ export async function saveBusinessPage(values, existingPage) {
     business_name: values.businessName.trim(),
     business_slug: slugify(values.businessSlug || values.businessName),
     business_category: values.businessCategory.trim(),
+    business_address: values.businessAddress.trim(),
+    pincode: values.pincode.trim(),
+    website_address: values.websiteAddress.trim(),
+    office_location_map_link: values.officeLocationMapLink.trim(),
     logo_url: logoUrl,
     business_expertise: values.businessExpertise.trim(),
     about_us: values.aboutUs.trim(),
@@ -180,9 +182,7 @@ export async function saveBusinessPage(values, existingPage) {
 
   const {data, error} = await supabase
     .from(businessPagesTable)
-    .upsert(payload, {
-      onConflict: 'user_id'
-    })
+    .upsert(payload, {onConflict: 'user_id'})
     .select()
     .single();
 
@@ -195,28 +195,21 @@ export async function saveBusinessPage(values, existingPage) {
 
 export function businessPageFormValues(page, registrationCategory, user) {
   return {
-    businessName:
-      page?.business_name ||
-      user?.user_metadata?.business_name ||
-      '',
+    businessName: page?.business_name || user?.user_metadata?.business_name || '',
     businessSlug: page?.business_slug || '',
-    businessCategory:
-      page?.business_category ||
-      registrationCategory ||
-      '',
-    logoUrl:
-      page?.logo_url ||
-      user?.user_metadata?.photo_url ||
-      '',
+    businessCategory: page?.business_category || registrationCategory || '',
+    businessAddress: page?.business_address || '',
+    pincode: page?.pincode || '',
+    websiteAddress: page?.website_address || '',
+    officeLocationMapLink: page?.office_location_map_link || '',
+    logoUrl: page?.logo_url || user?.user_metadata?.photo_url || '',
     logoFile: null,
     businessExpertise: page?.business_expertise || '',
     aboutUs: page?.about_us || '',
     servicesOffered: page?.services_offered || '',
     products: page?.products || '',
     caterTo: page?.cater_to || '',
-    clientTestimonials: normalizeTestimonials(
-      page?.client_testimonials
-    ),
+    clientTestimonials: normalizeTestimonials(page?.client_testimonials),
     clientLogos: page?.client_logos || [],
     clientLogoFiles: [],
     businessImages: page?.business_images || [],
@@ -226,10 +219,7 @@ export function businessPageFormValues(page, registrationCategory, user) {
       page?.primary_contact_number ||
       user?.user_metadata?.contact_number ||
       '',
-    emailId:
-      page?.email_id ||
-      user?.email ||
-      '',
+    emailId: page?.email_id || user?.email || '',
     socialFacebook: page?.social_facebook || '',
     socialInstagram: page?.social_instagram || '',
     socialX: page?.social_x || '',
@@ -238,8 +228,4 @@ export function businessPageFormValues(page, registrationCategory, user) {
   };
 }
 
-export {
-  splitLines,
-  slugify,
-  normalizeSlug
-};
+export {splitLines, slugify, normalizeSlug};

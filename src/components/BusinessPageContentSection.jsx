@@ -2,13 +2,8 @@ import React, {useState} from 'react';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 
-const {FiPlus, FiTrash2, FiUpload} = FiIcons;
-
-const emptyTestimonial = {
-  name: '',
-  role: '',
-  quote: ''
-};
+const {FiCheck, FiPlus, FiTrash2, FiUpload} = FiIcons;
+const emptyTestimonial = {name: '', role: '', quote: ''};
 
 function BusinessPageContentSection({
   aboutUs,
@@ -17,7 +12,9 @@ function BusinessPageContentSection({
   onAboutUsChange,
   onTestimonialsChange,
   onClientLogosChange,
-  onLogoUpload
+  onLogoUpload,
+  onSave,
+  saving
 }) {
   const [testimonial, setTestimonial] = useState(emptyTestimonial);
 
@@ -51,10 +48,7 @@ function BusinessPageContentSection({
         </span>
         <div>
           <h3>About us, testimonials and client logos</h3>
-          <p>
-            Add the trust-building content visitors should see on your public
-            business page.
-          </p>
+          <p>Add the trust-building content visitors should see on your public business page.</p>
         </div>
       </header>
 
@@ -183,6 +177,18 @@ function BusinessPageContentSection({
             ))}
           </div>
         )}
+      </div>
+
+      <div className="business-page-section__actions">
+        <button
+          type="button"
+          className="business-page-section-save"
+          onClick={onSave}
+          disabled={saving}
+        >
+          <SafeIcon icon={saving ? FiPlus : FiCheck} />
+          {saving ? 'Saving section…' : 'Save this section'}
+        </button>
       </div>
     </section>
   );

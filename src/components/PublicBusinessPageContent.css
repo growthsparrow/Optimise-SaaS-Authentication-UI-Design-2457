@@ -7,16 +7,8 @@
   border: 1px solid color-mix(in srgb, var(--business-accent) 22%, #d7e9eb);
   border-radius: 24px;
   background:
-    radial-gradient(
-      circle at 92% 8%,
-      color-mix(in srgb, var(--business-accent) 16%, transparent),
-      transparent 14rem
-    ),
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--business-soft) 78%, #fff),
-      rgba(255, 255, 255, .95) 66%
-    );
+    radial-gradient(circle at 92% 8%, color-mix(in srgb, var(--business-accent) 16%, transparent), transparent 14rem),
+    linear-gradient(135deg, color-mix(in srgb, var(--business-soft) 78%, #fff), rgba(255, 255, 255, .95) 66%);
   box-shadow: 0 20px 48px color-mix(in srgb, var(--business-deep) 9%, transparent);
 }
 
@@ -28,9 +20,7 @@
   height: 250px;
   border: 1px solid color-mix(in srgb, var(--business-accent) 22%, transparent);
   border-radius: 50%;
-  box-shadow:
-    0 0 0 24px color-mix(in srgb, var(--business-accent) 5%, transparent),
-    0 0 0 52px color-mix(in srgb, var(--business-accent) 3%, transparent);
+  box-shadow: 0 0 0 24px color-mix(in srgb, var(--business-accent) 5%, transparent), 0 0 0 52px color-mix(in srgb, var(--business-accent) 3%, transparent);
   content: '';
   pointer-events: none;
 }
@@ -78,6 +68,14 @@
   color: color-mix(in srgb, var(--business-ink) 67%, #71888d);
   font-size: .9rem;
   line-height: 1.9;
+}
+
+.public-business-content--offer {
+  position: relative;
+}
+
+.public-business-content--offer .public-business-info {
+  min-height: 245px;
 }
 
 .public-business-testimonials,
@@ -130,12 +128,7 @@
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--business-accent) 17%, #d7e9eb);
   border-radius: 17px;
-  background:
-    linear-gradient(
-      145deg,
-      rgba(255, 255, 255, .98),
-      color-mix(in srgb, var(--business-soft) 48%, #fff)
-    );
+  background: linear-gradient(145deg, rgba(255, 255, 255, .98), color-mix(in srgb, var(--business-soft) 48%, #fff));
   box-shadow: 0 12px 28px color-mix(in srgb, var(--business-deep) 6%, transparent);
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
@@ -146,7 +139,7 @@
   right: 17px;
   color: color-mix(in srgb, var(--business-accent) 28%, transparent);
   content: '“';
-  font: 800 4.8rem/1 Manrope, sans-serif;
+  font: 800 4.8rem / 1 Manrope, sans-serif;
   pointer-events: none;
 }
 
@@ -211,33 +204,6 @@
   border-radius: 15px;
   background: rgba(255, 255, 255, .84);
   box-shadow: 0 9px 22px color-mix(in srgb, var(--business-deep) 5%, transparent);
-  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
-}
-
-.public-business-client-logo::before {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    120deg,
-    transparent 25%,
-    color-mix(in srgb, var(--business-accent) 7%, transparent),
-    transparent 75%
-  );
-  content: '';
-  opacity: 0;
-  transform: translateX(-100%);
-  transition: opacity 180ms ease, transform 450ms ease;
-}
-
-.public-business-client-logo:hover {
-  border-color: color-mix(in srgb, var(--business-accent) 32%, #dcebed);
-  box-shadow: 0 15px 29px color-mix(in srgb, var(--business-deep) 9%, transparent);
-  transform: translateY(-4px);
-}
-
-.public-business-client-logo:hover::before {
-  opacity: 1;
-  transform: translateX(100%);
 }
 
 .public-business-client-logo img {
@@ -249,13 +215,6 @@
   object-fit: contain;
   filter: saturate(.8);
   opacity: .82;
-  transition: filter 180ms ease, opacity 180ms ease, transform 180ms ease;
-}
-
-.public-business-client-logo:hover img {
-  filter: saturate(1);
-  opacity: 1;
-  transform: scale(1.04);
 }
 
 @media (max-width: 700px) {
@@ -285,14 +244,5 @@
   .public-business-testimonial {
     min-height: 0;
     padding: 20px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .public-business-testimonial,
-  .public-business-client-logo,
-  .public-business-client-logo img,
-  .public-business-client-logo::before {
-    transition: none;
   }
 }

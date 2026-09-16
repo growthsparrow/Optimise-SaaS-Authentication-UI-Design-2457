@@ -1,0 +1,135 @@
+.business-completeness {
+  display: grid;
+  gap: 17px;
+  padding: 22px 24px;
+  border: 1px solid #b8e4e8;
+  border-radius: 18px;
+  background: linear-gradient(120deg, #eafafa, #fff);
+  box-shadow: 0 13px 30px rgba(7, 85, 100, .05);
+}
+
+.business-completeness__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.business-completeness h3 {
+  margin-top: 8px;
+  color: #164b58;
+  font: 800 1.1rem Manrope, sans-serif;
+}
+
+.business-completeness p {
+  max-width: 680px;
+  margin-top: 7px;
+  color: #71888d;
+  font-size: .72rem;
+  line-height: 1.55;
+}
+
+.business-completeness__score {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  padding: 9px 12px;
+  border-radius: 999px;
+  background: #078f9e;
+  color: #fff;
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+.business-completeness__score svg {
+  width: 14px;
+}
+
+.business-completeness__bar {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #d9eeee;
+}
+
+.business-completeness__bar span {
+  display: block;
+  height: 100%;
+  min-width: 3px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #13b8b7, #61ded7);
+  transition: width 300ms ease;
+}
+
+.business-completeness__items {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.business-completeness__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 13px;
+  border: 1px solid #d4e8e9;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, .76);
+  color: #789397;
+}
+
+.business-completeness__item svg {
+  flex: 0 0 auto;
+  width: 17px;
+  color: #9bb5b8;
+}
+
+.business-completeness__item span {
+  display: grid;
+  gap: 3px;
+}
+
+.business-completeness__item strong {
+  color: #52757d;
+  font-size: .72rem;
+}
+
+.business-completeness__item small {
+  color: #8ba1a5;
+  font-size: .64rem;
+}
+
+.business-completeness__item.is-complete {
+  border-color: #b8e3d0;
+  background: #effaf5;
+}
+
+.business-completeness__item.is-complete svg,
+.business-completeness__item.is-complete strong {
+  color: #168764;
+}
+
+.business-completeness__hint {
+  padding-top: 2px;
+  color: #8a6d2d !important;
+}
+
+@media (max-width: 620px) {
+  .business-completeness {
+    padding: 18px;
+    border-radius: 16px;
+  }
+
+  .business-completeness__heading {
+    flex-direction: column;
+  }
+
+  .business-completeness__score {
+    align-self: flex-start;
+  }
+
+  .business-completeness__items {
+    grid-template-columns: 1fr;
+  }
+}
