@@ -20,16 +20,13 @@ const logoUrl = 'https://media-manager-c.questera.ai/greta-media/b00cad02cfeb55a
 const ownerMenuItems = [
   { label: 'My Business Page', icon: FiBriefcase },
   { label: 'Configure Bookings', icon: FiLink },
+  { label: 'Manage Appointments', icon: FiCalendar },
   { label: 'Appointment Form', icon: FiEdit3 },
-  { label: 'Appointments Overview', icon: FiCalendar },
   { label: 'Team Members', icon: FiUsers },
-  { label: 'Analytics and Reports', icon: FiBarChart2 },
   { label: 'Profile Management', icon: FiUser }
 ];
 
-const memberMenuItems = [
-  { label: 'Appointments Overview', icon: FiCalendar }
-];
+const memberMenuItems = [];
 
 function DashboardSidebar({ open, onClose, activeItem, onSelect, memberMode }) {
   const menuItems = memberMode ? memberMenuItems : ownerMenuItems;
