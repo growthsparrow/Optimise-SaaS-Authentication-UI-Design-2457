@@ -19,8 +19,8 @@ const logoUrl = 'https://media-manager-c.questera.ai/greta-media/b00cad02cfeb55a
 
 const ownerMenuItems = [
   { label: 'My Business Page', icon: FiBriefcase },
+  { label: 'My Calendar', icon: FiCalendar },
   { label: 'Configure Bookings', icon: FiLink },
-  { label: 'Manage Appointments', icon: FiCalendar },
   { label: 'Appointment Form', icon: FiEdit3 },
   { label: 'Team Members', icon: FiUsers },
   { label: 'Profile Management', icon: FiUser }

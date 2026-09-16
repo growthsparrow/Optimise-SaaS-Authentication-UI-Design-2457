@@ -1,0 +1,229 @@
+.my-calendar {
+  min-height: 100%;
+  padding: 36px;
+  color: #14231f;
+  background: linear-gradient(135deg, #f8fbf8 0%, #eef5f0 100%);
+}
+
+.my-calendar__hero,
+.my-calendar__section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.my-calendar__hero {
+  padding: 30px;
+  border: 1px solid #dce9df;
+  border-radius: 24px;
+  background: radial-gradient(circle at 90% 0%, #d7f2e2, transparent 38%), #ffffff;
+  box-shadow: 0 18px 45px rgba(43, 87, 62, 0.08);
+}
+
+.my-calendar__eyebrow {
+  display: block;
+  margin-bottom: 8px;
+  color: #43805c;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.my-calendar h1,
+.my-calendar h2,
+.my-calendar h3,
+.my-calendar p {
+  margin: 0;
+}
+
+.my-calendar h1 {
+  font-size: clamp(28px, 4vw, 42px);
+  letter-spacing: -0.04em;
+}
+
+.my-calendar__hero p {
+  margin-top: 10px;
+  color: #708079;
+}
+
+.my-calendar__refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 16px;
+  border: 1px solid #cfe0d4;
+  border-radius: 12px;
+  color: #286240;
+  background: #f5fbf6;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.my-calendar__layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 22px;
+  margin-top: 22px;
+}
+
+.my-calendar__dates,
+.my-calendar__appointments {
+  padding: 20px;
+  border: 1px solid #dce9df;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 12px 30px rgba(43, 87, 62, 0.06);
+}
+
+.my-calendar__dates {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.my-calendar__date {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px;
+  border: 0;
+  border-radius: 12px;
+  color: #56675e;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.my-calendar__date strong {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border-radius: 50%;
+  color: #43805c;
+  background: #eaf5ed;
+  font-size: 12px;
+}
+
+.my-calendar__date--active {
+  color: #ffffff;
+  background: #286240;
+  box-shadow: 0 8px 18px rgba(40, 98, 64, 0.2);
+}
+
+.my-calendar__date--active strong {
+  color: #286240;
+  background: #ffffff;
+}
+
+.my-calendar__count {
+  padding: 8px 12px;
+  border-radius: 20px;
+  color: #43805c;
+  background: #eaf5ed;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.appointment-card {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  margin-top: 16px;
+  padding: 18px;
+  border: 1px solid #e3eee5;
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.appointment-card__time,
+.appointment-card__details p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.appointment-card__time {
+  color: #43805c;
+}
+
+.appointment-card__details h3 {
+  color: #263a30;
+  font-size: 16px;
+}
+
+.appointment-card__details p {
+  margin-top: 6px;
+  color: #87948d;
+  font-size: 13px;
+}
+
+.appointment-card__status {
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: #27613e;
+  background: #e9f6ec;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.appointment-card__status--cancelled,
+.appointment-card__status--no_show {
+  color: #a24d4d;
+  background: #fcede9;
+}
+
+.my-calendar__empty,
+.my-calendar__error {
+  display: grid;
+  min-height: 220px;
+  margin-top: 22px;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  border: 1px dashed #cbded0;
+  border-radius: 20px;
+  color: #718079;
+  text-align: center;
+}
+
+.my-calendar__empty svg {
+  color: #43805c;
+  font-size: 28px;
+}
+
+.my-calendar__empty h2 {
+  color: #263a30;
+}
+
+.my-calendar__error {
+  min-height: auto;
+  padding: 15px;
+  border-style: solid;
+  border-color: #f0caca;
+  color: #9e4f4f;
+  background: #fff6f5;
+}
+
+@media (max-width: 760px) {
+  .my-calendar {
+    padding: 20px 14px;
+  }
+
+  .my-calendar__hero,
+  .my-calendar__section-heading {
+    flex-direction: column;
+  }
+
+  .my-calendar__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .appointment-card {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
