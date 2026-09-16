@@ -7,41 +7,39 @@ const {
   FiBriefcase,
   FiCalendar,
   FiChevronRight,
+  FiEdit3,
   FiLink,
   FiMenu,
-  FiUsers,
   FiUser,
+  FiUsers,
   FiX
 } = FiIcons;
 
 const logoUrl = 'https://media-manager-c.questera.ai/greta-media/b00cad02cfeb55a1b54773f1814a28783966fac1191f97d55bc1db6658c27e2897de2ada8340abcbb890f1cad119b01d/images/aW1hZ2UvcG5n/583122e1068a93e947bbf988744900e9.png';
 
 const ownerMenuItems = [
-  {label: 'My Business Page', icon: FiBriefcase},
-  {label: 'Configure Bookings', icon: FiLink},
-  {label: 'Appointments Overview', icon: FiCalendar},
-  {label: 'Team Members', icon: FiUsers},
-  {label: 'Analytics and Reports', icon: FiBarChart2},
-  {label: 'Profile Management', icon: FiUser}
+  { label: 'My Business Page', icon: FiBriefcase },
+  { label: 'Configure Bookings', icon: FiLink },
+  { label: 'Appointment Form', icon: FiEdit3 },
+  { label: 'Appointments Overview', icon: FiCalendar },
+  { label: 'Team Members', icon: FiUsers },
+  { label: 'Analytics and Reports', icon: FiBarChart2 },
+  { label: 'Profile Management', icon: FiUser }
 ];
 
 const memberMenuItems = [
-  {label: 'Appointments Overview', icon: FiCalendar}
+  { label: 'Appointments Overview', icon: FiCalendar }
 ];
 
-function DashboardSidebar({open, onClose, activeItem, onSelect, memberMode}) {
+function DashboardSidebar({ open, onClose, activeItem, onSelect, memberMode }) {
   const menuItems = memberMode ? memberMenuItems : ownerMenuItems;
 
   return (
     <>
       {open && (
-        <button
-          className="sidebar-overlay"
-          type="button"
-          onClick={onClose}
-          aria-label="Close menu"
-        />
+        <button className="sidebar-overlay" type="button" onClick={onClose} aria-label="Close menu" />
       )}
+
       <aside className={`dashboard-sidebar ${open ? 'dashboard-sidebar--open' : ''}`}>
         <div className="sidebar-brand">
           <span className="sidebar-logo">

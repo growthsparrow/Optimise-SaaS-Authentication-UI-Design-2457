@@ -1,3 +1,5 @@
+@import './components/AppointmentFormBuilder.css';
+@import './components/PublicAppointmentBooking.css';
 @import './components/BookingPhotoUpload.css';
 @import './components/BookingTypeModalAnimation.css';
 @import './components/BusinessPageContentSection.css';
@@ -9,7 +11,7 @@
 @tailwind utilities;
 
 :root {
-  font-family: 'DM Sans',sans-serif;
+  font-family: 'DM Sans', sans-serif;
   color: #10233c;
   background: #f5f8fc;
   font-synthesis: none;
