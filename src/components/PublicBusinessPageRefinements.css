@@ -182,3 +182,102 @@
     transition: none;
   }
 }
+
+/* Targeted layout refinement: preserve the existing visual system while
+   making the About Us, testimonials and logo sections format consistently. */
+
+.public-business-content--single {
+  grid-template-columns: minmax(0, 1fr) !important;
+  width: min(1160px, 100%);
+}
+
+.public-business-content--single .public-business-info {
+  width: 100%;
+  min-width: 0;
+}
+
+.public-business-content--single .public-business-info p {
+  max-width: 900px;
+  overflow-wrap: anywhere;
+}
+
+.public-business-testimonial-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.public-business-testimonial {
+  min-width: 0;
+  min-height: 215px;
+  padding: 22px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--business-accent) 17%, #d7e9eb);
+  border-radius: 17px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, .98), color-mix(in srgb, var(--business-soft) 48%, #fff));
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--business-deep) 6%, transparent);
+}
+
+.public-business-testimonial p {
+  overflow-wrap: anywhere;
+}
+
+.public-business-client-logo-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 13px;
+  width: 100%;
+}
+
+.public-business-client-logo {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  height: 112px;
+  place-items: center;
+  padding: 16px 20px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--business-accent) 14%, #dcebed);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, .9);
+  box-shadow: 0 9px 22px color-mix(in srgb, var(--business-deep) 5%, transparent);
+}
+
+.public-business-client-logo img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 62px;
+  object-fit: contain;
+}
+
+@media (max-width: 900px) {
+  .public-business-testimonial-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .public-business-client-logo-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 650px) {
+  .public-business-testimonial-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .public-business-client-logo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .public-business-client-logo {
+    height: 92px;
+    padding: 13px;
+  }
+
+  .public-business-client-logo img {
+    max-height: 45px;
+  }
+}
