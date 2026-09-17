@@ -281,3 +281,58 @@
     max-height: 45px;
   }
 }
+
+/* Requested presentation polish. Existing rules above remain unchanged. */
+
+.public-business-content--single .public-business-info p,
+.public-business-content--offer .public-business-info > p,
+.public-business-content--details .public-business-info > p,
+.public-business-testimonial p {
+  text-align: justify;
+  text-justify: inter-word;
+}
+
+.public-business-content--single .public-business-info p {
+  font-size: 1rem;
+  line-height: 1.95;
+}
+
+.public-business-testimonial p {
+  font-size: .92rem;
+  line-height: 1.8;
+}
+
+.public-business-client-logo {
+  place-items: center;
+}
+
+.public-business-client-logo img {
+  width: min(100%, 180px);
+  max-width: 180px;
+  height: 58px;
+  max-height: 58px;
+  object-fit: contain;
+  object-position: center;
+}
+
+@media (max-width: 650px) {
+  .public-business-content--single .public-business-info p {
+    font-size: .9rem;
+    line-height: 1.85;
+  }
+
+  .public-business-client-logo img {
+    width: min(100%, 130px);
+    max-width: 130px;
+    height: 45px;
+    max-height: 45px;
+  }
+}
+
+/* About section readability refinement. */
+.public-business-content--single .public-business-info p {
+  max-width: none;
+  text-align: left;
+  text-justify: auto;
+  line-height: 1.65;
+}

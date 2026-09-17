@@ -5,9 +5,10 @@ import SafeIcon from '../common/SafeIcon';
 import { createPublicBooking, getPublicAppointmentForm } from '../services/appointmentFormService';
 import { getPublicBusinessPage } from '../services/businessPageService';
 import { listBookingTypes } from '../services/bookingTypeService';
+import { getPublicBusinessPageUrl } from '../utils/publicBusinessLinks';
 import './PublicAppointmentBooking.css';
 
-const { FiArrowRight, FiCalendar, FiCheck, FiCopy, FiMapPin, FiShare2, FiUser, FiVideo } = FiIcons;
+const { FiArrowRight, FiCalendar, FiCheck, FiClock, FiCopy, FiMapPin, FiShare2, FiUser, FiVideo } = FiIcons;
 
 function getLocalDateKey(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -42,6 +43,15 @@ function buildAvailableDates(bookingType) {
   return dates;
 }
 
+function isPhoneField(field) {
+  const fieldText = `${field.name || ''} ${field.label || ''}`.toLowerCase();
+  return field.type === 'tel' || /(phone|mobile|contact)/.test(fieldText);
+}
+
+function normalizePhoneValue(value) {
+  return String(value || '').replace(/\D/g, '').slice(0, 10);
+}
+
 function PublicAppointmentBooking() {
   const { businessSlug } = useParams();
   const [page, setPage] = useState(null);
@@ -54,6 +64,7 @@ function PublicAppointmentBooking() {
   const [confirmation, setConfirmation] = useState(null);
   const [step, setStep] = useState(1);
   const [notice, setNotice] = useState('');
+  const [invalidPhoneField, setInvalidPhoneField] = useState('');
   const [loading, setLoading] = useState(true);
   const [sharing, setSharing] = useState(false);
 
@@ -91,6 +102,9 @@ function PublicAppointmentBooking() {
 
   const updateValue = (name, value) => {
     setValues((current) => ({ ...current, [name]: value }));
+    if (name === invalidPhoneField && /^\d{10}$/.test(String(value))) {
+      setInvalidPhoneField('');
+    }
     setNotice('');
   };
 
@@ -103,6 +117,19 @@ function PublicAppointmentBooking() {
       setNotice(`Please complete: ${invalid.label}.`);
       return;
     }
+
+    const phoneField = form?.fields?.find(isPhoneField);
+    if (phoneField) {
+      const phoneValue = normalizePhoneValue(values[phoneField.name]);
+      if (!/^\d{10}$/.test(phoneValue)) {
+        setInvalidPhoneField(phoneField.name);
+        setNotice('Phone number must contain exactly 10 digits.');
+        return;
+      }
+      setValues((current) => ({ ...current, [phoneField.name]: phoneValue }));
+    }
+
+    setInvalidPhoneField('');
     setNotice('');
     setStep(2);
   };
@@ -182,6 +209,7 @@ function PublicAppointmentBooking() {
 
   const isOnlineAppointment = selectedType?.booking_type === 'online';
   const meetingLink = confirmation?.google_meet_link || selectedType?.meeting_invite_link || '';
+  const businessPageLink = getPublicBusinessPageUrl(businessSlug);
 
   return (
     <main className="public-appointment-booking" style={{ '--public-accent': '#087f8d', '--public-deep': '#063e50', '--public-soft': '#e8f8f7' }}>
@@ -191,7 +219,10 @@ function PublicAppointmentBooking() {
             {page.logo_url && <img src={page.logo_url} alt={`${page.business_name} logo`} />}
             <span><small>Appointment booking</small><strong>{page.business_name}</strong></span>
           </div>
-          <div className="public-appointment-booking__progress">{[1, 2, 3, 4].map((item) => <span className={item <= step ? 'is-active' : ''} key={item} />)}</div>
+          <div className="public-appointment-booking__header-actions">
+            <a className="public-appointment-booking__business-link" href={businessPageLink}>View business page <SafeIcon icon={FiArrowRight} /></a>
+            <div className="public-appointment-booking__progress">{[1, 2, 3, 4].map((item) => <span className={item <= step ? 'is-active' : ''} key={item} />)}</div>
+          </div>
         </header>
 
         <div className="public-appointment-booking__grid">
@@ -203,7 +234,7 @@ function PublicAppointmentBooking() {
           </aside>
 
           <section className="public-appointment-booking__card">
-            {step === 1 && <><h2>{form?.form_name || 'Tell us about your appointment'}</h2><p>{form?.description || 'Complete your details to get started.'}</p><DynamicFields fields={form?.fields || []} values={values} onChange={updateValue} /><button className="public-appointment-booking__primary" type="button" onClick={continueFromForm}>Continue <SafeIcon icon={FiArrowRight} /></button></>}
+            {step === 1 && <><h2>{form?.form_name || 'Tell us about your appointment'}</h2><p>{form?.description || 'Complete your details to get started.'}</p><DynamicFields fields={form?.fields || []} values={values} invalidPhoneField={invalidPhoneField} onChange={updateValue} /><button className="public-appointment-booking__primary" type="button" onClick={continueFromForm}>Continue <SafeIcon icon={FiArrowRight} /></button></>}
 
             {step === 2 && <><h2>Choose an appointment type</h2><p>Select the service, professional or consultation you want.</p><div className="public-appointment-booking__types">{bookingTypes.length ? bookingTypes.map((item) => <button type="button" className={selectedType?.id === item.id ? 'public-appointment-booking__type is-selected' : 'public-appointment-booking__type'} key={item.id} onClick={() => setSelectedType(item)}><span className="public-appointment-booking__type-avatar">{item.photo_url ? <img src={item.photo_url} alt="" /> : <SafeIcon icon={FiUser} />}</span><span className="public-appointment-booking__type-copy"><strong>{item.booking_name}</strong><small>{item.show_professional_name !== false ? item.professional_name || 'Professional appointment' : 'Professional appointment'}{item.show_professional_expertise !== false && item.professional_expertise ? ` · ${item.professional_expertise}` : ''}</small></span>{item.show_cost && <span className="public-appointment-booking__type-fee">₹{Number(item.cost_inr || 0).toLocaleString('en-IN')}</span>}</button>) : <p>No appointment types are currently available.</p>}</div><button className="public-appointment-booking__primary" type="button" onClick={continueFromType}>Continue <SafeIcon icon={FiArrowRight} /></button></>}
 
@@ -219,8 +250,17 @@ function PublicAppointmentBooking() {
   );
 }
 
-function DynamicFields({ fields, values, onChange }) {
-  return <div className="public-appointment-booking__fields">{fields.map((field) => <label className={field.type === 'checkbox' ? 'public-appointment-booking__field public-appointment-booking__field--check' : 'public-appointment-booking__field'} key={field.id || field.name}>{field.type === 'checkbox' ? <><input type="checkbox" checked={Boolean(values[field.name])} onChange={(event) => onChange(field.name, event.target.checked)} /><span>{field.label}{field.required ? ' *' : ''}</span></> : <><span>{field.label}{field.required ? ' *' : ''}</span>{field.type === 'textarea' ? <textarea value={values[field.name] || ''} placeholder={field.placeholder} onChange={(event) => onChange(field.name, event.target.value)} required={field.required} /> : field.type === 'select' ? <select value={values[field.name] || ''} onChange={(event) => onChange(field.name, event.target.value)} required={field.required}><option value="">Choose an option</option>{(field.options || []).map((option) => <option key={option}>{option}</option>)}</select> : <input type={field.type} value={values[field.name] || ''} placeholder={field.placeholder} onChange={(event) => onChange(field.name, event.target.value)} required={field.required} />}</>}</label>)}</div>;
+function DynamicFields({ fields, values, invalidPhoneField, onChange }) {
+  return <div className="public-appointment-booking__fields">{fields.map((field) => {
+    const phoneField = isPhoneField(field);
+    const invalid = invalidPhoneField === field.name;
+    const fieldClass = field.type === 'checkbox'
+      ? 'public-appointment-booking__field public-appointment-booking__field--check'
+      : `public-appointment-booking__field${invalid ? ' is-invalid' : ''}`;
+
+    return <label className={fieldClass} key={field.id || field.name}>
+      {field.type === 'checkbox' ? <><input type="checkbox" checked={Boolean(values[field.name])} onChange={(event) => onChange(field.name, event.target.checked)} /><span>{field.label}{field.required ? ' *' : ''}</span></> : <><span>{field.label}{field.required ? ' *' : ''}</span>{field.type === 'textarea' ? <textarea value={values[field.name] || ''} placeholder={field.placeholder} onChange={(event) => onChange(field.name, event.target.value)} required={field.required} /> : field.type === 'select' ? <select value={values[field.name] || ''} onChange={(event) => onChange(field.name, event.target.value)} required={field.required}><option value="">Choose an option</option>{(field.options || []).map((option) => <option key={option}>{option}</option>)}</select> : <input className={invalid ? 'is-invalid' : ''} type={field.type} value={values[field.name] || ''} placeholder={field.placeholder} onChange={(event) => onChange(field.name, phoneField ? normalizePhoneValue(event.target.value) : event.target.value)} required={field.required} maxLength={phoneField ? 10 : undefined} inputMode={phoneField ? 'numeric' : undefined} aria-invalid={invalid} />}{invalid && <small className="public-appointment-booking__field-error">Enter exactly 10 digits.</small>}</>}</label>;
+  })}</div>;
 }
 
 export default PublicAppointmentBooking;
