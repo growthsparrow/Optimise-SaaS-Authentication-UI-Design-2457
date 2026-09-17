@@ -57,7 +57,7 @@ function SignUp() {
     }
 
     if (data.session) {
-      navigate('/dashboard',{replace:true,state:{activeItem:'My Business Page'}});
+      navigate('/dashboard',{replace:true,state:{activeItem:'My Calendar'}});
       return;
     }
 
@@ -89,7 +89,7 @@ function SignUp() {
         </label>
 
         <div className="form-grid">
-          <PasswordField id="password" label="Password" autoComplete="new-password"/>
+          <PasswordField id="password" label="Password" label="Password" autoComplete="new-password"/>
           <PasswordField id="confirm-password" label="Confirm password" autoComplete="new-password"/>
         </div>
 

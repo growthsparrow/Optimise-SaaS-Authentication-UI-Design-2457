@@ -1,4 +1,8 @@
 import supabase from '../supabase/supabase';
+import {
+  normalizePhoneFields,
+  validatePhoneFields
+} from '../utils/phone';
 
 const formsTable = 'appointment_forms_1789608000000';
 const publicBookingsTable = 'public_booking_requests_1789608000000';
@@ -47,13 +51,8 @@ export const defaultAppointmentFields = [
 export async function getMyAppointmentForm() {
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
-  if (userError) {
-    throw userError;
-  }
-
-  if (!userData.user) {
-    throw new Error('Your session has expired. Please sign in again.');
-  }
+  if (userError) throw userError;
+  if (!userData.user) throw new Error('Your session has expired. Please sign in again.');
 
   const { data, error } = await supabase
     .from(formsTable)
@@ -63,23 +62,15 @@ export async function getMyAppointmentForm() {
     .limit(1)
     .maybeSingle();
 
-  if (error) {
-    throw error;
-  }
-
+  if (error) throw error;
   return data;
 }
 
 export async function saveAppointmentForm(values, existingForm) {
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
-  if (userError) {
-    throw userError;
-  }
-
-  if (!userData.user) {
-    throw new Error('Your session has expired. Please sign in again.');
-  }
+  if (userError) throw userError;
+  if (!userData.user) throw new Error('Your session has expired. Please sign in again.');
 
   const payload = {
     user_id: userData.user.id,
@@ -88,9 +79,7 @@ export async function saveAppointmentForm(values, existingForm) {
     fields: values.fields.map((field, index) => ({
       ...field,
       position: index,
-      options: field.type === 'select'
-        ? field.options.filter(Boolean)
-        : []
+      options: field.type === 'select' ? field.options.filter(Boolean) : []
     })),
     is_published: values.isPublished,
     updated_at: new Date().toISOString()
@@ -102,10 +91,7 @@ export async function saveAppointmentForm(values, existingForm) {
 
   const { data, error } = await query.select().single();
 
-  if (error) {
-    throw error;
-  }
-
+  if (error) throw error;
   return data;
 }
 
@@ -115,10 +101,7 @@ export async function getPublicAppointmentForm(businessSlug) {
     { business_slug_value: businessSlug }
   );
 
-  if (error) {
-    throw error;
-  }
-
+  if (error) throw error;
   return data?.[0] || null;
 }
 
@@ -129,6 +112,11 @@ export async function createPublicBooking({
   bookingTime,
   formResponse
 }) {
+  const normalizedResponse = normalizePhoneFields(formResponse);
+  const phoneError = validatePhoneFields(normalizedResponse);
+
+  if (phoneError) throw new Error(phoneError);
+
   const { data, error } = await supabase.rpc(
     'create_public_booking_request_1789608000000',
     {
@@ -136,14 +124,11 @@ export async function createPublicBooking({
       booking_type_id_value: bookingTypeId,
       booking_date_value: bookingDate,
       booking_time_value: bookingTime,
-      form_response_value: formResponse
+      form_response_value: normalizedResponse
     }
   );
 
-  if (error) {
-    throw error;
-  }
-
+  if (error) throw error;
   return data?.[0];
 }
 
@@ -153,9 +138,6 @@ export async function listPublicBookingRequests() {
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (error) {
-    throw error;
-  }
-
+  if (error) throw error;
   return data || [];
 }

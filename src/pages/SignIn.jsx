@@ -45,7 +45,7 @@ function SignIn() {
         return;
       }
 
-      navigate('/dashboard',{replace:true});
+      navigate('/dashboard',{replace:true,state:{activeItem:'My Calendar'}});
     } catch (routingError) {
       await supabase.auth.signOut();
       setNotice(routingError.message || 'Unable to verify account access.');
@@ -68,7 +68,7 @@ function SignIn() {
       );
 
       saveTeamMemberSession(member);
-      navigate('/dashboard',{replace:true});
+      navigate('/dashboard',{replace:true,state:{activeItem:'My Calendar'}});
     } catch (error) {
       setNotice(error.message);
     } finally {

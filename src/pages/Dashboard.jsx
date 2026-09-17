@@ -7,6 +7,7 @@ import AppointmentOverview from '../components/AppointmentOverview';
 import AppointmentFormBuilder from '../components/AppointmentFormBuilder';
 import BookingTypes from '../components/BookingTypes';
 import AnalyticsReports from '../components/AnalyticsReports';
+import MyCalendar from '../components/MyCalendar';
 import BusinessPageManager from '../components/BusinessPageManager';
 import TeamMembersManager from '../components/TeamMembersManager';
 import ProfileManager from '../components/ProfileManager';
@@ -28,7 +29,7 @@ function Dashboard() {
   const routeLocation = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeItem, setActiveItem] = useState(
-    routeLocation.state?.activeItem || 'Appointments Overview'
+    routeLocation.state?.activeItem || 'My Calendar'
   );
   const [profile, setProfile] = useState(null);
   const [businessPageData, setBusinessPageData] = useState({
@@ -39,6 +40,13 @@ function Dashboard() {
   const [customerId, setCustomerId] = useState('');
   const [member, setMember] = useState(getTeamMemberSession());
   const [signingOut, setSigningOut] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(routeLocation.search);
+    if (params.get('google_calendar') === 'connected') {
+      setActiveItem('Configure Bookings');
+    }
+  }, [routeLocation.search]);
 
   useEffect(() => {
     let active = true;
@@ -113,6 +121,10 @@ function Dashboard() {
   const renderActiveSection = () => {
     if (member && activeItem !== 'Appointments Overview') {
       return <AppointmentOverview />;
+    }
+
+    if (activeItem === 'My Calendar') {
+      return <MyCalendar />;
     }
 
     if (activeItem === 'Appointment Form') {
