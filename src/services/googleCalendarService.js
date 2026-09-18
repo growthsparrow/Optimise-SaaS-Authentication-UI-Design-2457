@@ -1,7 +1,24 @@
 import supabase from '../supabase/supabase';
 
 const GOOGLE_CALENDAR_TEMPLATE_URL = 'https://calendar.google.com/calendar/render?action=TEMPLATE';
-const functionName = 'smooth-service';
+const functionName = 'google-calendar-oauth';
+
+async function readFunctionError(error) {
+  if (!error) {
+    return '';
+  }
+
+  if (error.context?.json) {
+    try {
+      const body = await error.context.json();
+      return body?.error || body?.message || '';
+    } catch {
+      return '';
+    }
+  }
+
+  return error.message || '';
+}
 
 async function invoke(action, body) {
   const query = new URLSearchParams({ action });
@@ -13,8 +30,11 @@ async function invoke(action, body) {
   );
 
   if (error) {
+    const detail = await readFunctionError(error);
+
     throw new Error(
-      error.message || `Failed to send a request to the ${functionName} Edge Function.`
+      detail ||
+        `The Google Calendar Edge Function could not be reached. Verify that "${functionName}" is deployed and that its required Supabase secrets are configured.`
     );
   }
 

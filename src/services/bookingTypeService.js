@@ -3,12 +3,18 @@ import supabase from '../supabase/supabase';
 const bookingTypesTable='booking_types_1789450000000';
 const bookingTypePhotosBucket='booking-type-photos';
 
-export async function listBookingTypes() {
-  const {data,error}=await supabase
+export async function listBookingTypes(userId) {
+  let query=supabase
     .from(bookingTypesTable)
     .select('*')
     .eq('is_archived',false)
     .order('created_at',{ascending:false});
+
+  if (userId) {
+    query=query.eq('user_id',userId);
+  }
+
+  const {data,error}=await query;
 
   if (error) {
     throw error;

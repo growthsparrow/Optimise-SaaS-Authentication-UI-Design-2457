@@ -69,14 +69,37 @@ function PublicAppointmentBooking() {
   const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
-    Promise.all([getPublicBusinessPage(businessSlug), getPublicAppointmentForm(businessSlug), listBookingTypes()])
-      .then(([businessPage, appointmentForm, types]) => {
+    let cancelled = false;
+
+    async function loadBookingExperience() {
+      try {
+        const businessPage = await getPublicBusinessPage(businessSlug);
+        const [appointmentForm, types] = await Promise.all([
+          getPublicAppointmentForm(businessSlug),
+          listBookingTypes(businessPage.user_id)
+        ]);
+
+        if (cancelled) return;
+
         setPage(businessPage);
         setForm(appointmentForm);
         setBookingTypes(types.filter((item) => item.is_enabled !== false));
-      })
-      .catch((error) => setNotice(error.message))
-      .finally(() => setLoading(false));
+      } catch (error) {
+        if (!cancelled) {
+          setNotice(error.message);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadBookingExperience();
+
+    return () => {
+      cancelled = true;
+    };
   }, [businessSlug]);
 
   useEffect(() => {
