@@ -32,13 +32,13 @@ function GoogleCalendarConnection() {
     const status = params.get('google_calendar');
 
     if (status === 'connected') {
-      setMessage('Google Calendar connected successfully.');
+      setMessage('Google Calendar connected successfully. Online bookings will now receive Google Meet links.');
       load();
-      window.history.replaceState({}, '', window.location.pathname);
+      window.history.replaceState({}, '', window.location.pathname + window.location.hash.split('?')[0]);
     } else if (status === 'error') {
       const errorMsg = params.get('message') || 'Google Calendar connection failed.';
       setMessage(errorMsg);
-      window.history.replaceState({}, '', window.location.pathname);
+      window.history.replaceState({}, '', window.location.pathname + window.location.hash.split('?')[0]);
     }
   }, []);
 
@@ -92,8 +92,8 @@ function GoogleCalendarConnection() {
         <span className="dashboard-eyebrow">Online booking automation</span>
         <h3>Google Calendar & Meet</h3>
         <p>
-          Connect the workspace owner's Google account from this page. Confirmed
-          online bookings will receive a Calendar event and Google Meet link.
+          Connect the workspace owner's Google account. Confirmed
+          online bookings will automatically receive a Google Calendar event and Google Meet link.
           Offline bookings remain unchanged.
         </p>
         {connection?.google_email && <strong>{connection.google_email}</strong>}
@@ -128,12 +128,6 @@ function GoogleCalendarConnection() {
           </button>
         )}
       </div>
-
-      {working && (
-        <p className="booking-types__notice" role="status">
-          Complete Google authorization in the separate sign-in window. This Configure Bookings page will stay open.
-        </p>
-      )}
 
       {message && (
         <p className="booking-types__notice" role="status">
