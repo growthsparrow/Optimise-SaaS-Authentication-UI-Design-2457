@@ -21,11 +21,20 @@ async function readFunctionError(error) {
 }
 
 async function invoke(action, body) {
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session && action !== 'status') {
+    throw new Error('Please sign in to continue.');
+  }
+
   const query = new URLSearchParams({ action });
   const { data, error } = await supabase.functions.invoke(
     `${functionName}?${query.toString()}`,
     {
-      body: body || {}
+      body: body || {},
+      headers: session ? {
+        Authorization: `Bearer ${session.access_token}`
+      } : {}
     }
   );
 

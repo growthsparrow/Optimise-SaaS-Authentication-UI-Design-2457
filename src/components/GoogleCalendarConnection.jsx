@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
+import supabase from '../supabase/supabase';
 import {
-  beginGoogleCalendarConnection,
   disconnectGoogleCalendar,
   getGoogleCalendarStatus
 } from '../services/googleCalendarService';
@@ -27,20 +27,34 @@ function GoogleCalendarConnection() {
 
   useEffect(() => {
     load();
+
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get('google_calendar');
+
+    if (status === 'connected') {
+      setMessage('Google Calendar connected successfully.');
+      load();
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (status === 'error') {
+      const errorMsg = params.get('message') || 'Google Calendar connection failed.';
+      setMessage(errorMsg);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
   }, []);
 
-  const connect = async () => {
-    setWorking(true);
-    setMessage('');
-
+  const handleConnectCalendar = async () => {
     try {
-      await beginGoogleCalendarConnection();
-      await load();
-      setMessage('Google Calendar is connected to this workspace.');
-    } catch (error) {
-      setMessage(error.message || 'Google Calendar connection failed.');
-    } finally {
-      setWorking(false);
+      const { data: { user }, error } = await supabase.auth.getUser();
+
+      if (error || !user) {
+        alert('Please sign in to your account first.');
+        return;
+      }
+
+      const functionUrl = `https://tyqtfqlvqkznvjntemdg.supabase.co/functions/v1/google-calendar-oauth?action=auth&user_id=${user.id}`;
+      window.location.href = functionUrl;
+    } catch (err) {
+      console.error('Failed to initiate Google Calendar connection:', err);
     }
   };
 
@@ -78,7 +92,7 @@ function GoogleCalendarConnection() {
         <span className="dashboard-eyebrow">Online booking automation</span>
         <h3>Google Calendar & Meet</h3>
         <p>
-          Connect the workspace owner’s Google account from this page. Confirmed
+          Connect the workspace owner's Google account from this page. Confirmed
           online bookings will receive a Calendar event and Google Meet link.
           Offline bookings remain unchanged.
         </p>
@@ -102,7 +116,7 @@ function GoogleCalendarConnection() {
           {connected ? 'Connected' : hasPermissionError ? 'Permission required' : 'Not connected'}
         </span>
 
-        <button type="button" className="dashboard-primary" onClick={connect} disabled={working}>
+        <button type="button" className="dashboard-primary" onClick={handleConnectCalendar} disabled={working}>
           <SafeIcon icon={connected ? FiRefreshCw : FiCalendar} />
           {working ? 'Waiting for Google…' : connected ? 'Reconnect Google' : 'Connect Google Calendar'}
         </button>
